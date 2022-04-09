@@ -54,3 +54,59 @@ void addKeyToBinaryTree(char key) {
     else
         pred->rightChild = newNode;
 }
+
+void removeKeyFromBinaryTree(char key) {
+    if (KeysRoot == NULL)
+        return;
+    Node* iterator = KeysRoot;
+    Node* pred = NULL;
+    while (iterator != NULL) {
+        pred = iterator;
+        if (iterator->key.content < key)
+            iterator = iterator->leftChild;
+        else if (iterator->key.content > key)
+            iterator = iterator->rightChild;
+        else {
+            if (iterator->key.probability > 1) {
+                iterator->key.probability--;
+                return;
+            }
+            if (!iterator->leftChild && !iterator->rightChild) {
+                if (pred == NULL) {
+                    KeysRoot = NULL;
+                }
+                free(iterator);
+                if (key < pred->key.content)
+                    pred->leftChild = NULL;
+                else pred->rightChild = NULL;
+            } else if (iterator->leftChild && iterator->rightChild) {
+                Node *leftIterator = iterator->leftChild;
+                Node *leftPredIterator = NULL;
+                while (leftIterator != NULL) {
+                    leftPredIterator = leftIterator;
+                    leftIterator = leftIterator->rightChild;
+                }
+                char newKey = leftIterator->key.content;
+                removeKeyFromBinaryTree(leftIterator->key.content);
+                iterator->key.content = newKey;
+            } else {
+                if (iterator->leftChild) {
+                    iterator->key.content = iterator->leftChild->key.content;
+                    Node* leftChild = iterator->leftChild->leftChild;
+                    Node* rightChild = iterator->leftChild->rightChild;
+                    free(iterator->leftChild);
+                    iterator->leftChild = leftChild;
+                    iterator->rightChild = rightChild;
+
+                } else {
+                    iterator->key.content = iterator->rightChild->key.content;
+                    Node* leftChild = iterator->rightChild->leftChild;
+                    Node* rightChild = iterator->rightChild->rightChild;
+                    free(iterator->rightChild);
+                    iterator->leftChild = leftChild;
+                    iterator->rightChild = rightChild;
+                }
+            }
+        }
+    }
+}
