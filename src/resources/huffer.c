@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 void freeTree(Node* tree) {
-    // elibereaza memoria arborelui in caz de probleme la malloc
     if(tree) {
         struct Node* leftChild = tree->leftChild;
         struct Node* rightChild = tree->rightChild;
@@ -114,15 +113,6 @@ void removeKeyFromBinaryTree(char key) {
                 }
             }
         }
-    }
-}
-
-void preordine(Node* referinta) {
-    // parcurgerea in preordine in arbore binar ordonat
-    if (referinta) {
-        printf("%c ", referinta->key.content);
-        preordine(referinta->leftChild);
-        preordine(referinta->rightChild);
     }
 }
 
