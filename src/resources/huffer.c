@@ -179,6 +179,7 @@ Node* parseKeysTree() {
         NodeData secondSmallestNode = getSmallestData();
         removeData(secondSmallestNode.node);
         Node* newRoot = (Node *)malloc(sizeof(Node));
+        newRoot->key.content = '*';
         newRoot->key.isSpecialNode = 1;
         newRoot->leftChild = smallestNode.node;
         newRoot->rightChild = secondSmallestNode.node;
@@ -187,13 +188,10 @@ Node* parseKeysTree() {
         newRoot->key.probability = leftProbability + rightProbability;
         HuffmanRoot = newRoot;
         addData(HuffmanRoot, 0);
-        for (int i = 0; i < 2; i++) {
-            if (numberOfData - 2 - i < 0)
-                break;
-            NodeData aux = data[numberOfData-2-i];
-            if (aux.isBinaryTreeNode == 1) {
-                addKeyToBinaryTree(aux.node->key.content);
-                removeData(aux.node);
+        for (int i = numberOfData - 1; i >= 0; i--) {
+            if (data[i].isBinaryTreeNode == 1) {
+                addKeyToBinaryTree(data[i].node->key.content);
+                removeData(data[i].node);
             }
         }
 
@@ -202,3 +200,10 @@ Node* parseKeysTree() {
     return HuffmanRoot;
 }
 
+void viewHuffmanCode(Node* tree) {
+    if (tree) {
+        printf("%c ", tree->key.content);
+        viewHuffmanCode(tree->leftChild);
+        viewHuffmanCode(tree->rightChild);
+    }
+}
