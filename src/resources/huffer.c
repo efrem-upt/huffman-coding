@@ -46,6 +46,7 @@ void addKeyToBinaryTree(char key) {
         exit(EXIT_FAILURE);
     }
     newNode->key.content = key;
+    newNode->key.probability = 1;
     newNode->leftChild = NULL;
     newNode->rightChild = NULL;
 
@@ -61,11 +62,14 @@ void removeKeyFromBinaryTree(char key) {
     Node* iterator = KeysRoot;
     Node* pred = NULL;
     while (iterator != NULL) {
-        pred = iterator;
-        if (iterator->key.content < key)
+        if (iterator->key.content > key) {
+            pred = iterator;
             iterator = iterator->leftChild;
-        else if (iterator->key.content > key)
+        }
+        else if (iterator->key.content < key) {
+            pred = iterator;
             iterator = iterator->rightChild;
+        }
         else {
             if (iterator->key.probability > 1) {
                 iterator->key.probability--;
@@ -74,7 +78,9 @@ void removeKeyFromBinaryTree(char key) {
             if (!iterator->leftChild && !iterator->rightChild) {
                 if (pred == NULL) {
                     KeysRoot = NULL;
+                    return;
                 }
+
                 free(iterator);
                 if (key < pred->key.content)
                     pred->leftChild = NULL;
@@ -86,8 +92,8 @@ void removeKeyFromBinaryTree(char key) {
                     leftPredIterator = leftIterator;
                     leftIterator = leftIterator->rightChild;
                 }
-                char newKey = leftIterator->key.content;
-                removeKeyFromBinaryTree(leftIterator->key.content);
+                char newKey = leftPredIterator->key.content;
+                removeKeyFromBinaryTree(newKey);
                 iterator->key.content = newKey;
             } else {
                 if (iterator->leftChild) {
@@ -110,3 +116,13 @@ void removeKeyFromBinaryTree(char key) {
         }
     }
 }
+
+void preordine(Node* referinta) {
+    // parcurgerea in preordine in arbore binar ordonat
+    if (referinta) {
+        printf("%c ", referinta->key.content);
+        preordine(referinta->leftChild);
+        preordine(referinta->rightChild);
+    }
+}
+
