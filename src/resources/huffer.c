@@ -77,7 +77,6 @@ void removeKeyFromBinaryTree(char key) {
                     KeysRoot = NULL;
                     return;
                 }
-
                 free(iterator);
                 if (key < pred->key.content)
                     pred->leftChild = NULL;
@@ -90,11 +89,14 @@ void removeKeyFromBinaryTree(char key) {
                     leftIterator = leftIterator->rightChild;
                 }
                 char newKey = leftPredIterator->key.content;
+                int newProbability = leftPredIterator->key.probability;
                 removeKeyFromBinaryTree(newKey);
                 iterator->key.content = newKey;
+                iterator->key.probability = newProbability;
             } else {
                 if (iterator->leftChild) {
                     iterator->key.content = iterator->leftChild->key.content;
+                    iterator->key.probability = iterator->leftChild->key.probability;
                     Node* leftChild = iterator->leftChild->leftChild;
                     Node* rightChild = iterator->leftChild->rightChild;
                     free(iterator->leftChild);
@@ -103,6 +105,7 @@ void removeKeyFromBinaryTree(char key) {
 
                 } else {
                     iterator->key.content = iterator->rightChild->key.content;
+                    iterator->key.probability = iterator->rightChild->key.probability;
                     Node* leftChild = iterator->rightChild->leftChild;
                     Node* rightChild = iterator->rightChild->rightChild;
                     free(iterator->rightChild);
@@ -128,13 +131,14 @@ Node* getSmallestKey(Node* tree) {
             return leftTree;
           else return rightTree;
     } else return NULL;
+
+
 }
 
-void addData(Node* addedNode, int isBinaryTreeNode) {
+void addData(Node* addedNode) {
     if (addedNode == NULL)
         return;
     data[numberOfData].node = addedNode;
-    data[numberOfData].isBinaryTreeNode = isBinaryTreeNode;
     numberOfData++;
 }
 
@@ -153,7 +157,6 @@ NodeData getSmallestData() {
     int smallestDataProbability = MAX_PROB;
     NodeData smallestData;
     smallestData.node = NULL;
-    smallestData.isBinaryTreeNode = 0;
     for (int i = 0; i < numberOfData; i++) {
         if (data[i].node->key.probability < smallestDataProbability) {
             smallestDataProbability = data[i].node->key.probability;
@@ -164,16 +167,19 @@ NodeData getSmallestData() {
 }
 
 Node* parseKeysTree() {
-
+    if (KeysRoot == NULL)
+        return NULL;
+    while (KeysRoot) {
+        Node* smallestNode = getSmallestKey(KeysRoot);
+        Node* copyNode = (Node* )malloc(sizeof(Node));
+        copyNode->key.content = smallestNode->key.content;
+        copyNode->key.probability = smallestNode->key.probability;
+        copyNode->leftChild = NULL;
+        copyNode->rightChild = NULL;
+        addData(copyNode);
+        removeKeyFromBinaryTree(smallestNode->key.content);
+    }
     do {
-        Node* smallestKey = getSmallestKey(KeysRoot);
-        if (smallestKey)
-            removeKeyFromBinaryTree(smallestKey->key.content);
-        Node* secondSmallestKey = getSmallestKey(KeysRoot);
-        if (secondSmallestKey)
-            removeKeyFromBinaryTree(secondSmallestKey->key.content);
-        addData(smallestKey, 1);
-        addData(secondSmallestKey, 1);
         NodeData smallestNode = getSmallestData();
         removeData(smallestNode.node);
         NodeData secondSmallestNode = getSmallestData();
@@ -187,23 +193,16 @@ Node* parseKeysTree() {
         int rightProbability = (newRoot->rightChild) ? newRoot->rightChild->key.probability : 0;
         newRoot->key.probability = leftProbability + rightProbability;
         HuffmanRoot = newRoot;
-        addData(HuffmanRoot, 0);
-        for (int i = numberOfData - 1; i >= 0; i--) {
-            if (data[i].isBinaryTreeNode == 1) {
-                addKeyToBinaryTree(data[i].node->key.content);
-                removeData(data[i].node);
-            }
-        }
-
-    }while (KeysRoot != NULL);
+        addData(HuffmanRoot);
+    }while(numberOfData > 1);
 
     return HuffmanRoot;
 }
 
-void viewHuffmanCode(Node* tree) {
+void viewTree(Node* tree) {
     if (tree) {
+        viewTree(tree->leftChild);
         printf("%c ", tree->key.content);
-        viewHuffmanCode(tree->leftChild);
-        viewHuffmanCode(tree->rightChild);
+        viewTree(tree->rightChild);
     }
 }
