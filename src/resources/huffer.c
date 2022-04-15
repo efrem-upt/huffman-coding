@@ -1,5 +1,6 @@
 #include "huffer.h"
 #include <stdlib.h>
+#include <string.h>
 #define MAX_PROB 0xFFFF
 
 void freeTree(Node* tree) {
@@ -169,6 +170,14 @@ NodeData getSmallestData() {
 Node* parseKeysTree() {
     if (KeysRoot == NULL)
         return NULL;
+    else if (!KeysRoot->leftChild && !KeysRoot->rightChild) {
+         HuffmanRoot = (Node* )malloc(sizeof(Node));
+         HuffmanRoot->key.content = KeysRoot->key.content;
+         HuffmanRoot->key.isSpecialNode = 0;
+         HuffmanRoot->leftChild = NULL;
+         HuffmanRoot->rightChild = NULL;
+         return HuffmanRoot;
+    }
     while (KeysRoot) {
         Node* smallestNode = getSmallestKey(KeysRoot);
         Node* copyNode = (Node* )malloc(sizeof(Node));
@@ -199,10 +208,58 @@ Node* parseKeysTree() {
     return HuffmanRoot;
 }
 
+void parseKeysFile(char* pathLoFile) {
+    FILE* file = fopen(pathLoFile, "r");
+    if (!file) {
+        fprintf(stderr, "Eroare la citirea fisierului dat\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char ch;
+    do {
+        ch = fgetc(file);
+        if (ch != EOF)
+            addKeyToBinaryTree(ch);
+    }while(ch != EOF);
+    fclose(file);
+    parseKeysTree();
+}
+
+void getHuffmanCodes(Node* tree, char buf[MAX_HUFF_CODE]) {
+    if (!tree->leftChild && !tree->rightChild)
+        strcpy(HuffmanCodes[tree->key.content], buf);
+    else {
+        char aux1[256] = {};
+        char aux2[256] = {};
+        strcpy(aux1, buf);
+        strcpy(aux2, buf);
+        getHuffmanCodes(tree->leftChild, strcat(aux1, "0"));
+        getHuffmanCodes(tree->rightChild, strcat(aux2, "1"));
+    }
+}
+
+void transformFileTextToHuffman(char* pathToFile) {
+    FILE* file = fopen(pathToFile, "r");
+    if (!file) {
+        fprintf(stderr, "Eroare la citirea fisierului dat\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char ch[2] = {};
+    do {
+        ch[0] = fgetc(file);
+        strcat(FileTextToHuffman, HuffmanCodes[ch[0]]);
+    }while(ch[0] != EOF);
+    fclose(file);
+}
+
 void viewTree(Node* tree) {
     if (tree) {
         viewTree(tree->leftChild);
-        printf("%c ", tree->key.content);
+        if (tree->key.content == ' ')
+            printf("blank ");
+        else
+            printf("%c ", tree->key.content);
         viewTree(tree->rightChild);
     }
 }
