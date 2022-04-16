@@ -23,8 +23,9 @@ NodeData data[MAX_DATA];
 
 Node* HuffmanRoot = NULL; // root of the Huffman tree
 Node* KeysRoot = NULL; // root of the binary tree containing Huffman trees
-char HuffmanCodes[256][MAX_HUFF_CODE] = {};
-char FileTextToHuffman[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+char HuffmanCodes[256][MAX_HUFF_CODE] = {}; // contains the Huffman codes for each character in the file
+char FileTextToHuffman[MAX_HUFF_CODE*MAX_HUFF_CODE] = {}; // stores the text of the file encoded in the Huffman format
+char HuffmanTreeEncryption[512] = {}; // stores the encryption for the Huffman tree so the decryption can be implemented
 int numberOfData = 0;
 void freeTree(Node* tree); // frees all the tree memory created using malloc
 Node* addKeyToBinaryTree(char key); // adds the specified key in the binary tree containing all the keys and returns the node created
@@ -37,3 +38,7 @@ Node* parseKeysTree(); // parses the keys in the binary tree and returns the cor
 void parseKeysFile(char* pathToFile); // parses the file and creates the binary tree containing the keys
 void getHuffmanCodes(Node* tree, char buf[256]); // extracts the Huffman codes for each character in the Huffman tree (leaf nodes)
 void transformFileTextToHuffman(char* pathToFile); // reads a file and transforms the file text in it's Huffman binary representation
+unsigned char byteStringToBinaryChar(char* binaryString); // converts the binary string (8 bits) stored as a char array into a char variable that has the same binary representation
+void charToBinaryString(unsigned char ch, char buf[9]); // converts a char to it's binary representation (8 bits)
+void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]); // used in Huffman file encryption algorithm (for the header)
+void getHuffmanTreeEncryptionPostfix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]); // used in Huffman file encryption algorithm (for the header)

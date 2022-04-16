@@ -253,6 +253,110 @@ void transformFileTextToHuffman(char* pathToFile) {
     fclose(file);
 }
 
+unsigned char byteStringToBinaryChar(char* binaryString) {
+    unsigned char value = 0;
+    unsigned char exp = 1;
+    for (int i = strlen(binaryString) - 1; i >= 0; i--) {
+        value = value + (binaryString[i] - '0')*exp;
+        exp*=2;
+    }
+    return value;
+}
+
+void charToBinaryString(unsigned char ch, char buf[9]) {
+    for (int i = 0; i < 8; i++)
+        buf[i] = '0';
+    buf[8] = '\0';
+    unsigned char exp = 0;
+    unsigned char aux = ch;
+    while(aux) {
+        aux = aux/2;
+        if(aux)
+            exp++;
+    }
+    unsigned char old_exp = exp;
+    while(ch) {
+        if (ch % 2 == 0)
+            buf[7 - (old_exp-exp)] = '0';
+        else buf[7 - (old_exp-exp)] = '1';
+        exp--;
+        ch = ch/2;
+    }
+
+}
+
+void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+    if (tree == NULL)
+        return;
+    if (!tree->leftChild && !tree->rightChild)
+        strcat(buf,"1");
+    else {
+        strcat(buf,"0");
+        getHuffmanTreeEncryptionPrefix(tree->leftChild, buf);
+        getHuffmanTreeEncryptionPrefix(tree->rightChild, buf);
+    }
+}
+
+void getHuffmanTreeEncryptionPostfix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+    if (tree == NULL)
+        return;
+    if (!tree->leftChild && !tree->rightChild) {
+        char char_representation[9];
+        charToBinaryString(tree->key.content, char_representation);
+        strcat(buf,char_representation);
+    } else {
+        getHuffmanTreeEncryptionPostfix(tree->leftChild, buf);
+        getHuffmanTreeEncryptionPostfix(tree->rightChild, buf);
+    }
+}
+
+void createCompressedFile(char* pathToFile) {
+    parseKeysFile(pathToFile);
+    char buf[MAX_HUFF_CODE] = {};
+    getHuffmanCodes(HuffmanRoot, buf);
+    transformFileTextToHuffman(pathToFile);
+    char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    getHuffmanTreeEncryptionPrefix(HuffmanRoot, prefix);
+    getHuffmanTreeEncryptionPostfix(HuffmanRoot, postfix);
+    char HuffmanTreeEncryption[2*MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    strcat(HuffmanTreeEncryption, prefix);
+    strcat(HuffmanTreeEncryption, postfix);
+
+    FILE* compressedFile = fopen("resources/file.compressed","wb");
+    if (!compressedFile) {
+        fprintf(stderr,"Error on creating compressed file");
+        exit(EXIT_FAILURE);
+    }
+
+    char aux1[2*MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    strcpy(aux1,HuffmanTreeEncryption);
+
+    while(strlen(aux1)) {
+        char aux_byte[9] = {};
+        strncpy(aux_byte,aux1,8);
+        unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
+        fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
+        if(strlen(aux1) >= 8)
+            strcpy(aux1,aux1+8);
+        else strcpy(aux1,aux1+strlen(aux1));
+    }
+
+    char aux2[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    strcpy(aux2,FileTextToHuffman);
+
+    while(strlen(aux2)) {
+        char aux_byte[9] = {};
+        strncpy(aux_byte,aux2,8);
+        unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
+        fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
+        if(strlen(aux2) >= 8)
+            strcpy(aux2,aux2+8);
+        else strcpy(aux2,aux2+strlen(aux2));
+    }
+    fclose(compressedFile);
+}
+
 void viewTree(Node* tree) {
     if (tree) {
         viewTree(tree->leftChild);
