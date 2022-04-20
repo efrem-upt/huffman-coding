@@ -342,8 +342,11 @@ void createCompressedFile(char* pathToFile) {
     strcat(HuffmanTreeEncryption, fixed_prefix);
     free(fixed_prefix);
     strcat(HuffmanTreeEncryption, postfix);
-
-    FILE* compressedFile = fopen("resources/file.compressed","wb");
+    char filePath[512] = {};
+    strcpy(filePath, pathToFile);
+    char* fileExtension = strchr(filePath, '.') + 1;
+    strcpy(fileExtension, "EfremHuffmanCompression");
+    FILE* compressedFile = fopen(filePath,"wb");
     if (!compressedFile) {
         fprintf(stderr,"Error on creating compressed file");
         freeTree(HuffmanRoot);
@@ -456,7 +459,11 @@ void decryptCompressedFile(char* pathToCompressedFile) {
     recoverHuffmanTree(pathToCompressedFile);
     Node* iterator = HuffmanRoot;
     int dim = strlen(HuffmanTreeEncryption);
-    FILE* uncompressedFile = fopen("resources/uncompressedFile.txt", "w");
+    char filePath[512] = {};
+    strcpy(filePath, pathToCompressedFile);
+    char* fileExtension = strchr(filePath, '.');
+    strcpy(fileExtension, "_decrypted.txt");
+    FILE* uncompressedFile = fopen(filePath, "w");
     if (!uncompressedFile) {
         fprintf(stderr, "Couldn't create the uncompressed file with fopen");
         freeTree(HuffmanRoot);
@@ -479,3 +486,5 @@ void decryptCompressedFile(char* pathToCompressedFile) {
         fprintf(uncompressedFile, "%c", iterator->key.content);
     fclose(uncompressedFile);
 }
+
+
