@@ -46,4 +46,5 @@ void createCompressedFile(char* pathToFile); // creates the compressed file (in 
 Node* createHuffmanTreeFromPrefix(char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE]); // creates the Huffman tree format from the encrypted form (the Huffman tree prefix)
 void updateHuffmanTreeFromPostfix(Node* tree, char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE]); // updates the Huffman tree generated from the prefix with the actual content of the keys stored in the format postfix
 void recoverHuffmanTree(char* pathToCompressedFile); // uses the prefix and postfix format of the Huffman tree, encrypted in the pathToCompressedFile specified, and with it builds a new tree in memory, that has the same prefix and postfix form as the one indicated by the compressed file
+void decryptCompressedFile(char* pathToCompressedFile); // implemented decryption of file encoded in Huffman algorithm
 void freeHuffmanMemory(Node* tree); // frees the memory of the Huffman tree
