@@ -63,7 +63,7 @@ void removeKeyFromBinaryTree(char key) {
         return;
     Node* iterator = KeysRoot;
     Node* pred = NULL;
-    while (iterator != NULL) {
+    while (iterator != NULL && iterator->key.content != key) {
         if (iterator->key.content > key) {
             pred = iterator;
             iterator = iterator->leftChild;
@@ -72,12 +72,14 @@ void removeKeyFromBinaryTree(char key) {
             pred = iterator;
             iterator = iterator->rightChild;
         }
-        else {
-            if (!iterator->leftChild && !iterator->rightChild) {
-                if (pred == NULL) {
-                    KeysRoot = NULL;
-                    return;
-                }
+    }
+    if (iterator != NULL) {
+        if (!iterator->leftChild && !iterator->rightChild) {
+            if (pred == NULL) {
+                KeysRoot = NULL;
+                free(iterator);
+                return;
+            }
                 free(iterator);
                 if (key < pred->key.content)
                     pred->leftChild = NULL;
@@ -115,7 +117,6 @@ void removeKeyFromBinaryTree(char key) {
                 }
             }
         }
-    }
 }
 
 Node* getSmallestKey(Node* tree) {
@@ -176,6 +177,7 @@ Node* parseKeysTree() {
          HuffmanRoot->key.isSpecialNode = 0;
          HuffmanRoot->leftChild = NULL;
          HuffmanRoot->rightChild = NULL;
+         removeKeyFromBinaryTree(KeysRoot->key.content);
          return HuffmanRoot;
     }
     while (KeysRoot) {
@@ -320,18 +322,36 @@ void createCompressedFile(char* pathToFile) {
     getHuffmanTreeEncryptionPrefix(HuffmanRoot, prefix);
     getHuffmanTreeEncryptionPostfix(HuffmanRoot, postfix);
     char HuffmanTreeEncryption[2*MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
-    strcat(HuffmanTreeEncryption, prefix);
+    unsigned int characters_to_read = strlen(prefix);
+    unsigned int biggestNumberOfEightButSmallest = 0;
+    while (biggestNumberOfEightButSmallest < characters_to_read)
+        biggestNumberOfEightButSmallest += 8;
+    char* fixed_prefix = (char*)calloc(biggestNumberOfEightButSmallest + 1, sizeof(char));
+    if (!fixed_prefix) {
+        fprintf(stderr, "Memory error on fixing the prefix");
+        freeHuffmanMemory(HuffmanRoot);
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < biggestNumberOfEightButSmallest; i++)
+        fixed_prefix[i] = '0';
+    for (int i = 0; i < characters_to_read; i++) {
+        fixed_prefix[biggestNumberOfEightButSmallest-1-i] = prefix[characters_to_read-1-i];
+    }
+    fixed_prefix[biggestNumberOfEightButSmallest] = '\0';
+    strcat(HuffmanTreeEncryption, fixed_prefix);
+    free(fixed_prefix);
     strcat(HuffmanTreeEncryption, postfix);
 
     FILE* compressedFile = fopen("resources/file.compressed","wb");
     if (!compressedFile) {
         fprintf(stderr,"Error on creating compressed file");
+        freeHuffmanMemory(HuffmanRoot);
         exit(EXIT_FAILURE);
     }
-
+    fwrite(&characters_to_read,sizeof(unsigned int),1,compressedFile);
+    fwrite(&biggestNumberOfEightButSmallest, sizeof(unsigned int), 1 , compressedFile);
     char aux1[2*MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
     strcpy(aux1,HuffmanTreeEncryption);
-
     while(strlen(aux1)) {
         char aux_byte[9] = {};
         strncpy(aux_byte,aux1,8);
@@ -354,7 +374,92 @@ void createCompressedFile(char* pathToFile) {
             strcpy(aux2,aux2+8);
         else strcpy(aux2,aux2+strlen(aux2));
     }
+
     fclose(compressedFile);
+}
+
+Node* createHuffmanTreeFromPrefix(char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+        if (!strlen(prefix))
+            return NULL;
+        Node* tree = (Node*)malloc(sizeof(Node));
+        if (!tree) {
+            fprintf(stderr,"Memory error on creating Huffman tree from prefix");
+            freeHuffmanMemory(HuffmanRoot);
+            exit(EXIT_FAILURE);
+        }
+        if (prefix[0] == '1') {
+            tree->leftChild = NULL;
+            tree->rightChild = NULL;
+        } else {
+            tree->key.isSpecialNode = 1;
+            tree->key.content = '*';
+            tree->leftChild = createHuffmanTreeFromPrefix(strcpy(prefix,prefix+1));
+            tree->rightChild = createHuffmanTreeFromPrefix(strcpy(prefix,prefix+1));
+        }
+        return tree;
+}
+
+void updateHuffmanTreeFromPostfix(Node* tree, char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+    if (!tree->leftChild && !tree->rightChild) {
+        char aux_byte[9] = {};
+        strncpy(aux_byte,postfix,8);
+        if(strlen(postfix) >= 8)
+            strcpy(postfix, postfix+8);
+        else strcpy(postfix, postfix+strlen(postfix));
+        char ch = byteStringToBinaryChar(aux_byte);
+        tree->key.content = ch;
+    } else {
+        updateHuffmanTreeFromPostfix(tree->leftChild, postfix);
+        updateHuffmanTreeFromPostfix(tree->rightChild, postfix);
+    }
+}
+
+
+void recoverHuffmanTree(char* pathToCompressedFile) {
+    FILE* compressedFile = fopen(pathToCompressedFile, "rb");
+    if (!compressedFile) {
+        fprintf(stderr,"Error on reading the compressed file");
+        freeHuffmanMemory(HuffmanRoot);
+        exit(EXIT_FAILURE);
+    }
+
+    unsigned int characters_to_read = 0;
+    unsigned int correct_characters = 0;
+    fread(&characters_to_read,sizeof(unsigned int), 1, compressedFile);
+    fread(&correct_characters,sizeof(unsigned int), 1, compressedFile);
+    char HuffmanTreeEncryption[2*MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    unsigned char aux = 0;
+    while(fread(&aux,sizeof(unsigned char), 1, compressedFile) == 1) {
+        char binary_representation[9] = {};
+        charToBinaryString(aux, binary_representation);
+        strcat(HuffmanTreeEncryption, binary_representation);
+    }
+    fclose(compressedFile);
+    char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    strncpy(prefix, HuffmanTreeEncryption, correct_characters);
+    char* fixed_prefix = prefix + (correct_characters - characters_to_read);
+    int number_of_ones = 0;
+    int length_prefix = strlen(fixed_prefix);
+    for (int i = 0; i < length_prefix; i++) {
+        if (fixed_prefix[i] == '1')
+            number_of_ones++;
+    }
+    strcpy(HuffmanTreeEncryption, HuffmanTreeEncryption + correct_characters);
+    char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    strncpy(postfix, HuffmanTreeEncryption, number_of_ones*8);
+    strcpy(HuffmanTreeEncryption, HuffmanTreeEncryption + number_of_ones*8);
+    HuffmanRoot = createHuffmanTreeFromPrefix(fixed_prefix);
+    updateHuffmanTreeFromPostfix(HuffmanRoot, postfix);
+}
+
+void freeHuffmanMemory(Node* tree) {
+    if (tree != NULL) {
+        Node* leftChild = tree->leftChild;
+        Node* rightChild = tree->rightChild;
+        free(tree);
+        freeHuffmanMemory(leftChild);
+        freeHuffmanMemory(rightChild);
+    }
 }
 
 void viewTree(Node* tree) {

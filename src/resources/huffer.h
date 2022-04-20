@@ -1,6 +1,6 @@
 #include <stdio.h>
 #define MAX_DATA 1000
-#define MAX_HUFF_CODE 256
+#define MAX_HUFF_CODE 512
 
 typedef struct KeyType {
     char content;
@@ -42,3 +42,8 @@ unsigned char byteStringToBinaryChar(char* binaryString); // converts the binary
 void charToBinaryString(unsigned char ch, char buf[9]); // converts a char to it's binary representation (8 bits)
 void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]); // used in Huffman file encryption algorithm (for the header)
 void getHuffmanTreeEncryptionPostfix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]); // used in Huffman file encryption algorithm (for the header)
+void createCompressedFile(char* pathToFile); // creates the compressed file (in Huffman format), according to the file pointed by pathToFile
+Node* createHuffmanTreeFromPrefix(char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE]); // creates the Huffman tree format from the encrypted form (the Huffman tree prefix)
+void updateHuffmanTreeFromPostfix(Node* tree, char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE]); // updates the Huffman tree generated from the prefix with the actual content of the keys stored in the format postfix
+void recoverHuffmanTree(char* pathToCompressedFile); // uses the prefix and postfix format of the Huffman tree, encrypted in the pathToCompressedFile specified, and with it builds a new tree in memory, that has the same prefix and postfix form as the one indicated by the compressed file
+void freeHuffmanMemory(Node* tree); // frees the memory of the Huffman tree
