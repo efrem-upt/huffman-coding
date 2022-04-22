@@ -244,7 +244,7 @@ void computeHuffmanCodesLength() {
 void transformFileTextToHuffman(char* pathToFile) {
     FILE* file = fopen(pathToFile, "r");
     if (!file) {
-        fprintf(stderr, "Eroare la citirea fisierului dat\n");
+        fprintf(stderr, "Error on opening the file.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -529,7 +529,6 @@ void decryptCompressedFile(char* pathToCompressedFile) {
         freeTree(HuffmanRoot);
         exit(EXIT_FAILURE);
     }
-    printf("%s",encryption);
     while(numberOfCharacters) {
         if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters) {
             fprintf(uncompressedFile, "%c", iterator->key.content);
@@ -542,7 +541,6 @@ void decryptCompressedFile(char* pathToCompressedFile) {
         strcpy(encryption, encryption + 1);
         dim--;
     }
-    printf("ok");
     if (!iterator->leftChild && !iterator->rightChild)
         fprintf(uncompressedFile, "%c", iterator->key.content);
     fclose(uncompressedFile);
