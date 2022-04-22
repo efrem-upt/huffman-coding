@@ -1,21 +1,22 @@
 #include "huffer.h"
 #include <stdlib.h>
 #include <string.h>
-#define MAX_PROB 0xFFFF
+#define MAX_PROB 0xFFFF // maximum probability of a key
 
 void freeTree(Node* tree) {
     if(tree) {
-        struct Node* leftChild = tree->leftChild;
-        struct Node* rightChild = tree->rightChild;
-        free(tree);
-        freeTree(leftChild);
-        freeTree(rightChild);
+        struct Node* leftChild = tree->leftChild; // gets the left child
+        struct Node* rightChild = tree->rightChild; // gets the right child
+        free(tree); // frees the current
+        freeTree(leftChild); // applies freeTree on left child
+        freeTree(rightChild); // applies freeTree on right child
     }
 }
 
 
 Node* addKeyToBinaryTree(char key) {
-    if (!KeysRoot) {
+    if (!KeysRoot) { // if there is no key in the tree
+        // create the tree with one node
         KeysRoot = (Node*)malloc(sizeof(Node));
         if (!KeysRoot) {
             fprintf(stderr,"\nmalloc error on binary tree root initialisation\n");
@@ -27,10 +28,10 @@ Node* addKeyToBinaryTree(char key) {
         KeysRoot->rightChild = NULL;
         return KeysRoot;
     }
-
+    // else add the node accordingly
     Node* pred = NULL;
     Node* iterator = KeysRoot;
-    while (iterator != NULL) {
+    while (iterator != NULL) { // while we haven't found the position to insert
         pred = iterator;
         if (key < iterator->key.content)
             iterator = iterator->leftChild;
@@ -39,7 +40,7 @@ Node* addKeyToBinaryTree(char key) {
             return iterator;
         } else iterator = iterator->rightChild;
     }
-
+    // create new node and associate the relations
     Node* newNode = (Node*)malloc(sizeof(struct Node));
     if (!newNode) {
         fprintf(stderr,"\nmalloc error on adding a new node");
@@ -59,56 +60,62 @@ Node* addKeyToBinaryTree(char key) {
 }
 
 void removeKeyFromBinaryTree(char key) {
-    if (KeysRoot == NULL)
+    if (KeysRoot == NULL) // if there is no node in the tree
         return;
     Node* iterator = KeysRoot;
     Node* pred = NULL;
-    while (iterator != NULL && iterator->key.content != key) {
-        if (iterator->key.content > key) {
+    while (iterator != NULL && iterator->key.content != key) { // while we haven't found the key
+        if (iterator->key.content > key) { // if the key is smaller than current then go left
             pred = iterator;
             iterator = iterator->leftChild;
         }
-        else if (iterator->key.content < key) {
+        else if (iterator->key.content < key) { // else go right
             pred = iterator;
             iterator = iterator->rightChild;
         }
     }
-    if (iterator != NULL) {
-        if (!iterator->leftChild && !iterator->rightChild) {
-            if (pred == NULL) {
+    if (iterator != NULL) { // if we found the key
+        if (!iterator->leftChild && !iterator->rightChild) { // if the node is leaf
+            if (pred == NULL) { // if there is no node besides it (the tree contains only one node)
                 KeysRoot = NULL;
                 free(iterator);
                 return;
-            }
+            } // else remake the relations
                 free(iterator);
                 if (key < pred->key.content)
                     pred->leftChild = NULL;
                 else pred->rightChild = NULL;
-            } else if (iterator->leftChild && iterator->rightChild) {
+            } else if (iterator->leftChild && iterator->rightChild) { // if the node has both left and right child
+                // find the biggest element on the left
                 Node *leftIterator = iterator->leftChild;
                 Node *leftPredIterator = NULL;
                 while (leftIterator != NULL) {
                     leftPredIterator = leftIterator;
                     leftIterator = leftIterator->rightChild;
                 }
+                // switch biggest element with current and remove the node that contained the biggest element
                 char newKey = leftPredIterator->key.content;
                 int newProbability = leftPredIterator->key.probability;
                 removeKeyFromBinaryTree(newKey);
                 iterator->key.content = newKey;
                 iterator->key.probability = newProbability;
-            } else {
-                if (iterator->leftChild) {
+            } else { // it has only one child
+                if (iterator->leftChild) { // it has left child
+                    // switch keys and probabilities
                     iterator->key.content = iterator->leftChild->key.content;
                     iterator->key.probability = iterator->leftChild->key.probability;
+                    // remake relations
                     Node* leftChild = iterator->leftChild->leftChild;
                     Node* rightChild = iterator->leftChild->rightChild;
                     free(iterator->leftChild);
                     iterator->leftChild = leftChild;
                     iterator->rightChild = rightChild;
 
-                } else {
+                } else { // it has right child
+                    // switch keys and probabilities
                     iterator->key.content = iterator->rightChild->key.content;
                     iterator->key.probability = iterator->rightChild->key.probability;
+                    // remake relations
                     Node* leftChild = iterator->rightChild->leftChild;
                     Node* rightChild = iterator->rightChild->rightChild;
                     free(iterator->rightChild);
@@ -119,50 +126,32 @@ void removeKeyFromBinaryTree(char key) {
         }
 }
 
-Node* getSmallestKey(Node* tree) {
-    if (tree) {
-        Node* leftTree = getSmallestKey(tree->leftChild);
-        Node* rightTree = getSmallestKey(tree->rightChild);
-        int leftProbability = (leftTree != NULL) ? (leftTree->key.probability) : MAX_PROB;
-        int rightProbability = (rightTree != NULL) ? (rightTree->key.probability) : MAX_PROB;
-        if (tree->key.probability < rightProbability) {
-            if (tree->key.probability < leftProbability)
-                return tree;
-            else return leftTree;
-        } else if (leftProbability <= rightProbability)
-            return leftTree;
-          else return rightTree;
-    } else return NULL;
-
-
-}
-
 void addData(Node* addedNode) {
-    if (addedNode == NULL)
+    if (addedNode == NULL) // if node is null then we don't add it
         return;
-    data[numberOfData].node = addedNode;
+    // add data and icnrement numberOfData
+    data[numberOfData] = addedNode;
     numberOfData++;
 }
 
 void removeData(Node* searchedNode) {
     for (int i = 0; i < numberOfData; i++) {
-        if (data[i].node == searchedNode) {
+        if (data[i] == searchedNode) { // if node is found
             for (int j = i; j < numberOfData; j++)
-                data[j] = data[j + 1];
-            numberOfData--;
+                data[j] = data[j + 1]; // move elements to the left
+            numberOfData--; // decrement numberOfData
             break;
         }
     }
 }
 
-NodeData getSmallestData() {
-    int smallestDataProbability = MAX_PROB;
-    NodeData smallestData;
-    smallestData.node = NULL;
+Node* getSmallestData() {
+    int smallestDataProbability = MAX_PROB; // for finding minimum probability
+    Node* smallestData = NULL;
     for (int i = 0; i < numberOfData; i++) {
-        if (data[i].node->key.probability < smallestDataProbability) {
-            smallestDataProbability = data[i].node->key.probability;
-            smallestData = data[i];
+        if (data[i]->key.probability < smallestDataProbability) { // if current key probability is smaller than the one we have
+            smallestDataProbability = data[i]->key.probability; // update smallest probability
+            smallestData = data[i]; // update smallest node found
         }
     }
     return smallestData;
@@ -171,40 +160,41 @@ NodeData getSmallestData() {
 Node* parseKeysTree() {
     if (KeysRoot == NULL)
         return NULL;
-    else if (!KeysRoot->leftChild && !KeysRoot->rightChild) {
+    else if (!KeysRoot->leftChild && !KeysRoot->rightChild) { // if tree contains only one node
+        // creates the Huffman tree containing the copy of the same node
          HuffmanRoot = (Node* )malloc(sizeof(Node));
          HuffmanRoot->key.content = KeysRoot->key.content;
-         HuffmanRoot->key.isSpecialNode = 0;
          HuffmanRoot->leftChild = NULL;
          HuffmanRoot->rightChild = NULL;
          removeKeyFromBinaryTree(KeysRoot->key.content);
-         return HuffmanRoot;
+         return HuffmanRoot; // exit function
     }
-    while (KeysRoot) {
-        Node* smallestNode = getSmallestKey(KeysRoot);
+    while (KeysRoot) { // as long as we have nodes
+        Node* auxNode = KeysRoot; // get the root of the keys tree
+        // create copy of the node and add copy to data
         Node* copyNode = (Node* )malloc(sizeof(Node));
-        copyNode->key.content = smallestNode->key.content;
-        copyNode->key.probability = smallestNode->key.probability;
+        copyNode->key.content = auxNode->key.content;
+        copyNode->key.probability = auxNode->key.probability;
         copyNode->leftChild = NULL;
         copyNode->rightChild = NULL;
         addData(copyNode);
-        removeKeyFromBinaryTree(smallestNode->key.content);
+        removeKeyFromBinaryTree(auxNode->key.content); // removes the current root from the binary tree (refresh the binary tree)
     }
-    do {
-        NodeData smallestNode = getSmallestData();
-        removeData(smallestNode.node);
-        NodeData secondSmallestNode = getSmallestData();
-        removeData(secondSmallestNode.node);
+    do { // as long as we have data nodes
+        Node* smallestNode = getSmallestData(); // get smallest data
+        removeData(smallestNode);
+        Node* secondSmallestNode = getSmallestData(); // get second smallest data
+        removeData(secondSmallestNode);
+        // create new node containing the two nodes as childs and probabilities the sum of the child probabilities
         Node* newRoot = (Node *)malloc(sizeof(Node));
         newRoot->key.content = '*';
-        newRoot->key.isSpecialNode = 1;
-        newRoot->leftChild = smallestNode.node;
-        newRoot->rightChild = secondSmallestNode.node;
+        newRoot->leftChild = smallestNode;
+        newRoot->rightChild = secondSmallestNode;
         int leftProbability = (newRoot->leftChild) ? newRoot->leftChild->key.probability : 0;
         int rightProbability = (newRoot->rightChild) ? newRoot->rightChild->key.probability : 0;
         newRoot->key.probability = leftProbability + rightProbability;
-        HuffmanRoot = newRoot;
-        addData(HuffmanRoot);
+        HuffmanRoot = newRoot; // update the HuffmanRoot
+        addData(HuffmanRoot); // adds the new node to data to be used in the selection process
     }while(numberOfData > 1);
 
     return HuffmanRoot;
@@ -213,31 +203,41 @@ Node* parseKeysTree() {
 void parseKeysFile(char* pathLoFile) {
     FILE* file = fopen(pathLoFile, "r");
     if (!file) {
-        fprintf(stderr, "Eroare la citirea fisierului dat\n");
+        fprintf(stderr, "Error on opening the specified file\n");
         exit(EXIT_FAILURE);
     }
 
     char ch;
-    do {
+    do { // read charactes from the file and add them to the binary tree containing keys
         ch = fgetc(file);
-        if (ch != EOF)
+        if (ch != EOF) {
             addKeyToBinaryTree(ch);
+            numberOfCharacters++;
+        }
     }while(ch != EOF);
     fclose(file);
-    parseKeysTree();
+    parseKeysTree(); // parse the binary tree and get Huffman tree
 }
 
 void getHuffmanCodes(Node* tree, char buf[MAX_HUFF_CODE]) {
-    if (!tree->leftChild && !tree->rightChild) {
-        strcpy(HuffmanCodes[tree->key.content], buf);
+    if (!tree->leftChild && !tree->rightChild) { // if we found leaf node
+        strcpy(HuffmanCodes[tree->key.content], buf); // copy current traversal to the HuffmanCodes array, that will contain the code for the current character
     }
     else {
-        char aux1[256] = {};
-        char aux2[256] = {};
+        char aux1[MAX_HUFF_CODE] = {}; // auxiliary arrays to store traversals
+        char aux2[MAX_HUFF_CODE] = {};
         strcpy(aux1, buf);
         strcpy(aux2, buf);
-        getHuffmanCodes(tree->leftChild, strcat(aux1, "0"));
-        getHuffmanCodes(tree->rightChild, strcat(aux2, "1"));
+        getHuffmanCodes(tree->leftChild, strcat(aux1, "0")); // left = 0
+        getHuffmanCodes(tree->rightChild, strcat(aux2, "1")); // right = 1
+    }
+}
+
+void computeHuffmanCodesLength() {
+    for (int i = 0; i < 256; i++) {
+        int l = strlen(HuffmanCodes[i]);
+        if (l)
+            lengthOfHuffmanCodes[i] = l;
     }
 }
 
@@ -249,8 +249,15 @@ void transformFileTextToHuffman(char* pathToFile) {
     }
 
     char ch[2] = {};
-    do {
+    int currentSizeOfHuffmanText = 0; // stores the length of the variable FileTextToHuffman, for storage analysis and "file is too large" function
+    do { // read the file and add code representations from HuffmanCodes to the FileTextToHuffman by appending
         ch[0] = fgetc(file);
+        currentSizeOfHuffmanText += lengthOfHuffmanCodes[ch[0]];
+        if (currentSizeOfHuffmanText >= MAX_FILE_SIZE * MAX_HUFF_CODE) {
+            fprintf(stderr, "File is too large. Try a smaller size.\n");
+            freeTree(HuffmanRoot); // frees tree memory in case of error
+            exit(EXIT_FAILURE); // exits the program
+        }
         strcat(FileTextToHuffman, HuffmanCodes[ch[0]]);
     }while(ch[0] != EOF);
     fclose(file);
@@ -259,7 +266,7 @@ void transformFileTextToHuffman(char* pathToFile) {
 unsigned char byteStringToBinaryChar(char* binaryString) {
     unsigned char value = 0;
     unsigned char exp = 1;
-    for (int i = strlen(binaryString) - 1; i >= 0; i--) {
+    for (int i = strlen(binaryString) - 1; i >= 0; i--) { // approach like in mathematics: if abcd is a binary string than it's decimal representation is d*2^0 + c*2^1 + b*2^2 + a*2^3
         value = value + (binaryString[i] - '0')*exp;
         exp*=2;
     }
@@ -267,9 +274,10 @@ unsigned char byteStringToBinaryChar(char* binaryString) {
 }
 
 void charToBinaryString(unsigned char ch, char buf[9]) {
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++) // initialize buffer
         buf[i] = '0';
     buf[8] = '\0';
+    // exp - stores the smallest power of 2 bigger than the character
     unsigned char exp = 0;
     unsigned char aux = ch;
     while(aux) {
@@ -278,17 +286,57 @@ void charToBinaryString(unsigned char ch, char buf[9]) {
             exp++;
     }
     unsigned char old_exp = exp;
-    while(ch) {
-        if (ch % 2 == 0)
-            buf[7 - (old_exp-exp)] = '0';
-        else buf[7 - (old_exp-exp)] = '1';
-        exp--;
-        ch = ch/2;
+    while(ch) { // right-left approach until the variable becomes 0
+        if (ch % 2 == 0) // if character is divisible by 2
+            buf[7 - (old_exp-exp)] = '0'; // then add a 0
+        else buf[7 - (old_exp-exp)] = '1'; // else add a 1
+        exp--; // decrease exp to iterate through all characters in buffer
+        ch = ch/2; // to calculate the next binary digit
     }
 
 }
 
-void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+// Several notions on how I have encrypted the Huffman tree:
+// For the encryption of the actual tree structure, I do a preorder traversal on the Huffman tree
+// in that traversal, I mark with 0 non leaf-nodes and with 1 leaf-nodes. This is what I call the prefix of the Huffman tree encryption.
+// For example, let the following Huffman tree:
+//              *
+//           *     C
+//        A    B
+// The prefix of the tree stated is as follows: 00111 (5 bits). Thus, the prefix of a Huffman tree with n nodes has n bits.
+// To reconstruct the tree from it's prefix, we simply go as follows:
+// the first 0 tells us that there is no leaf-node, so we mark that node with * and go to the left (because that's what we did to encrypt it)
+// the next 0 tells us that there is no leaf-node, we mark it with * and go to the left
+// the next 1 tells us that there is a leaf-node, we mark it with <blank> and go to the right of it's parent
+// the next 1 tells us that there is a leaf-node, we mark it with <blank> and because we've exhaused the parent nodes from left to right, we go to the parent's parent's right
+// the next 1 tells us that there is a leaf-node, so we mark it with <blank> and because there is no bit after it, the tree has been reconstructed
+// After reconstructing, the tree looks like this:
+//              *
+//           *     <blank>
+//   <blank>    <blank>
+// The problem is that we don't have access to the real keys the old tree had. This is where the notion of postfix comes from.
+// The postfix stores the actual representation of the keys stored in the leaf nodes, from left to right.
+// For instance, take the tree we used to have:
+//              *
+//           *     C
+//        A    B
+// We apply the same preorder algorithm on this tree and, once we get to a leaf node, we store the binary representation of it's key
+// First is A, then is B, and then is C, and their binary representations are 01000001, 01000010, 01000011.
+// So, the postfix will be: 010000010100001001000011. We can notice the postfix has a length of 8*numberOfKeysInHuffmanTree
+// To reconstruct the tree and get the same nodes as in the original, we do a preorder traversal on the tree obtained after prefix reconstruction
+// Once we get to a leaf node that is currently blank, we convert the first chunk of 8 bits in the postfix and assign that key in the tree with the character representation
+// Doing this for all leaf-nodes, the original Huffman tree is reconstructed
+// So, the encoding for the original Huffman tree above, combining the prefix and postfix, is as follows: 00111010000010100001001000011, which is 29 bits, or 4 bytes.
+
+// Because computers work better in multiples of eight, in my solution I've done the following: I have extended the prefix length to the smallest number of eight bigger or equal than the current length.
+// For example, take our prefix: 00111. Because it's on 5 bits, I am extending it to 8 bits by adding 3 zeros to the left: 00000111.
+// Doing this, operations will be simpler to make, as the whole encryption will have it's length a multiple of eight.
+// For this, 2 bytes have to be used: 1 byte to store the length of the fixed prefix (the one multiple of eight), and 1 byte to store the length of the actual prefix (the one without the extra zeroes at the beginning)
+// These 2 bytes will be part of the file header, along with the 4 bytes of the tree encoding above.
+// An extra 4 bytes of the hader will be used to store the number of encoded Huffman keys after parsing the file. Thus, the total header size for this tree is 4 + 2 + 4 = 10 bytes. The same header will be used for all combinations
+// of the characters A,B,C, no matter the length of the string.
+
+void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[PREFIX_LENGTH]) {
     if (tree == NULL)
         return;
     if (!tree->leftChild && !tree->rightChild)
@@ -300,7 +348,7 @@ void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_
     }
 }
 
-void getHuffmanTreeEncryptionPostfix(Node* tree, char buf[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+void getHuffmanTreeEncryptionPostfix(Node* tree, char buf[POSTFIX_LENGTH]) {
     if (tree == NULL)
         return;
     if (!tree->leftChild && !tree->rightChild) {
@@ -317,14 +365,14 @@ void createCompressedFile(char* pathToFile) {
     parseKeysFile(pathToFile);
     char buf[MAX_HUFF_CODE] = {};
     getHuffmanCodes(HuffmanRoot, buf);
+    computeHuffmanCodesLength();
     transformFileTextToHuffman(pathToFile);
-    char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
-    char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    char prefix[PREFIX_LENGTH] = {};
+    char postfix[POSTFIX_LENGTH] = {};
     getHuffmanTreeEncryptionPrefix(HuffmanRoot, prefix);
     getHuffmanTreeEncryptionPostfix(HuffmanRoot, postfix);
-    char HuffmanTreeEncryption[2*MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
-    unsigned int characters_to_read = strlen(prefix);
-    unsigned int biggestNumberOfEightButSmallest = 0;
+    unsigned char characters_to_read = strlen(prefix);
+    unsigned char biggestNumberOfEightButSmallest = 0;
     while (biggestNumberOfEightButSmallest < characters_to_read)
         biggestNumberOfEightButSmallest += 8;
     char* fixed_prefix = (char*)calloc(biggestNumberOfEightButSmallest + 1, sizeof(char));
@@ -342,7 +390,7 @@ void createCompressedFile(char* pathToFile) {
     strcat(HuffmanTreeEncryption, fixed_prefix);
     free(fixed_prefix);
     strcat(HuffmanTreeEncryption, postfix);
-    char filePath[512] = {};
+    char filePath[FILE_PATH_LENGTH] = {};
     strcpy(filePath, pathToFile);
     char* fileExtension = strchr(filePath, '.') + 1;
     strcpy(fileExtension, "EfremHuffmanCompression");
@@ -352,37 +400,49 @@ void createCompressedFile(char* pathToFile) {
         freeTree(HuffmanRoot);
         exit(EXIT_FAILURE);
     }
-    fwrite(&characters_to_read,sizeof(unsigned int),1,compressedFile);
-    fwrite(&biggestNumberOfEightButSmallest, sizeof(unsigned int), 1 , compressedFile);
-    char aux1[2*MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+
+    fwrite(&characters_to_read,sizeof(unsigned char),1,compressedFile);
+    fwrite(&biggestNumberOfEightButSmallest, sizeof(unsigned char), 1 , compressedFile);
+    fwrite(&numberOfCharacters, sizeof(unsigned int), 1, compressedFile);
+    char aux1[PREFIX_LENGTH + POSTFIX_LENGTH] = {};
     strcpy(aux1,HuffmanTreeEncryption);
-    while(strlen(aux1)) {
+    int dim1 = strlen(aux1);
+    while(dim1) {
         char aux_byte[9] = {};
         strncpy(aux_byte,aux1,8);
         unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
         fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
-        if(strlen(aux1) >= 8)
+        if(dim1 >= 8) {
             strcpy(aux1,aux1+8);
-        else strcpy(aux1,aux1+strlen(aux1));
+            dim1 -= 8;
+        }
+        else {
+            strcpy(aux1,aux1+dim1);
+            dim1 -= dim1;
+        }
     }
 
-    char aux2[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
+    char aux2[MAX_FILE_SIZE*MAX_HUFF_CODE] = {};
     strcpy(aux2,FileTextToHuffman);
-
-    while(strlen(aux2)) {
+    int dim2 = strlen(aux2);
+    while(dim2) {
         char aux_byte[9] = {};
         strncpy(aux_byte,aux2,8);
+        if (dim2 < 8) {
+            for (int i = dim2; i < 8; i++)
+                aux_byte[i] = '0';
+            aux_byte[8] = '\0';
+            dim2 = 8;
+        }
         unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
         fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
-        if(strlen(aux2) >= 8)
-            strcpy(aux2,aux2+8);
-        else strcpy(aux2,aux2+strlen(aux2));
+        strcpy(aux2,aux2+8);
+        dim2 -= 8;
     }
-
     fclose(compressedFile);
 }
 
-Node* createHuffmanTreeFromPrefix(char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+Node* createHuffmanTreeFromPrefix(char prefix[PREFIX_LENGTH]) {
         if (!strlen(prefix))
             return NULL;
         Node* tree = (Node*)malloc(sizeof(Node));
@@ -395,7 +455,6 @@ Node* createHuffmanTreeFromPrefix(char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
             tree->leftChild = NULL;
             tree->rightChild = NULL;
         } else {
-            tree->key.isSpecialNode = 1;
             tree->key.content = '*';
             tree->leftChild = createHuffmanTreeFromPrefix(strcpy(prefix,prefix+1));
             tree->rightChild = createHuffmanTreeFromPrefix(strcpy(prefix,prefix+1));
@@ -403,7 +462,7 @@ Node* createHuffmanTreeFromPrefix(char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
         return tree;
 }
 
-void updateHuffmanTreeFromPostfix(Node* tree, char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE]) {
+void updateHuffmanTreeFromPostfix(Node* tree, char postfix[POSTFIX_LENGTH]) {
     if (!tree->leftChild && !tree->rightChild) {
         char aux_byte[9] = {};
         strncpy(aux_byte,postfix,8);
@@ -427,19 +486,20 @@ void recoverHuffmanTree(char* pathToCompressedFile) {
         exit(EXIT_FAILURE);
     }
 
-    unsigned int characters_to_read = 0;
-    unsigned int correct_characters = 0;
-    fread(&characters_to_read,sizeof(unsigned int), 1, compressedFile);
-    fread(&correct_characters,sizeof(unsigned int), 1, compressedFile);
+    unsigned char characters_to_read = 0;
+    unsigned char correct_characters = 0;
+    fread(&characters_to_read,sizeof(unsigned char), 1, compressedFile);
+    fread(&correct_characters,sizeof(unsigned char), 1, compressedFile);
+    fread(&numberOfCharacters,sizeof(unsigned int), 1, compressedFile);
     unsigned char aux = 0;
     while(fread(&aux,sizeof(unsigned char), 1, compressedFile) == 1) {
         char binary_representation[9] = {};
         charToBinaryString(aux, binary_representation);
-        strcat(HuffmanTreeEncryption, binary_representation);
+        strcat(encryption, binary_representation);
     }
     fclose(compressedFile);
-    char prefix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
-    strncpy(prefix, HuffmanTreeEncryption, correct_characters);
+    char prefix[PREFIX_LENGTH] = {};
+    strncpy(prefix, encryption, correct_characters);
     char* fixed_prefix = prefix + (correct_characters - characters_to_read);
     int number_of_ones = 0;
     int length_prefix = strlen(fixed_prefix);
@@ -447,10 +507,10 @@ void recoverHuffmanTree(char* pathToCompressedFile) {
         if (fixed_prefix[i] == '1')
             number_of_ones++;
     }
-    strcpy(HuffmanTreeEncryption, HuffmanTreeEncryption + correct_characters);
-    char postfix[MAX_HUFF_CODE*MAX_HUFF_CODE] = {};
-    strncpy(postfix, HuffmanTreeEncryption, number_of_ones*8);
-    strcpy(HuffmanTreeEncryption, HuffmanTreeEncryption + number_of_ones*8);
+    strcpy(encryption, encryption + correct_characters);
+    char postfix[POSTFIX_LENGTH] = {};
+    strncpy(postfix, encryption, number_of_ones*8);
+    strcpy(encryption, encryption + number_of_ones*8);
     HuffmanRoot = createHuffmanTreeFromPrefix(fixed_prefix);
     updateHuffmanTreeFromPostfix(HuffmanRoot, postfix);
 }
@@ -458,8 +518,8 @@ void recoverHuffmanTree(char* pathToCompressedFile) {
 void decryptCompressedFile(char* pathToCompressedFile) {
     recoverHuffmanTree(pathToCompressedFile);
     Node* iterator = HuffmanRoot;
-    int dim = strlen(HuffmanTreeEncryption);
-    char filePath[512] = {};
+    int dim = strlen(encryption);
+    char filePath[FILE_PATH_LENGTH] = {};
     strcpy(filePath, pathToCompressedFile);
     char* fileExtension = strchr(filePath, '.');
     strcpy(fileExtension, "_decrypted.txt");
@@ -469,22 +529,24 @@ void decryptCompressedFile(char* pathToCompressedFile) {
         freeTree(HuffmanRoot);
         exit(EXIT_FAILURE);
     }
-
-    while(dim) {
-        if (!iterator->leftChild && !iterator->rightChild) {
+    printf("%s",encryption);
+    while(numberOfCharacters) {
+        if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters) {
             fprintf(uncompressedFile, "%c", iterator->key.content);
             iterator = HuffmanRoot;
+            numberOfCharacters--;
         }
-
-        if (HuffmanTreeEncryption[0] == '0')
+        if (encryption[0] == '0')
             iterator = iterator->leftChild;
         else iterator = iterator->rightChild;
-        strcpy(HuffmanTreeEncryption, HuffmanTreeEncryption + 1);
+        strcpy(encryption, encryption + 1);
         dim--;
     }
+    printf("ok");
     if (!iterator->leftChild && !iterator->rightChild)
         fprintf(uncompressedFile, "%c", iterator->key.content);
     fclose(uncompressedFile);
 }
+
 
 
