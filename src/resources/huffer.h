@@ -3,12 +3,11 @@
 // the maximum number of nodes in the Huffman data creation process
 #define MAX_HUFF_CODE 257
 // the maximum length of a character's Huffman code, once it has been encrypted
-#define MAX_FILE_SIZE 4096
-// the maximum number of characters of the file that is going to be encrypted (for optimal performance)
+#define MAX_FILE_SIZE 8000
 // this number is only chosen in relation to MAX_HUFF_CODE. For example, if the text file always has
 // the worst Huffman code length of them all. This is not always the case, though. So, this MAX_FILE_SIZE
-// variable should not be treated as the real maximum file size. The program can work with file sizes bigger
-// than 4 KB. It's only a relative argument. Anyways, the program will warn if the user enters a file that is too large.
+// variable should not be treated as the real maximum file size. The program will work with file sizes bigger
+// than 8 KB. It's only a relative argument. Anyways, the program will warn if the user enters a file that is too large.
 #define FILE_PATH_LENGTH 64
 // the maximum length a file path given as argument can take
 #define PREFIX_LENGTH 300
@@ -23,7 +22,7 @@
 typedef struct KeyType {
     // Data Structure for the key
     char content;
-    int probability;
+    unsigned long long probability;
 }KeyType;
 
 typedef struct Node {
@@ -33,13 +32,13 @@ typedef struct Node {
     struct Node* rightChild;
 }Node;
 
-Node* data[MAX_DATA]; // node array for storing nodes and partial Huffman trees during the Huffman tree creation process
-int numberOfData = 0; // initial count of data
+Node* data[MAX_DATA] = {}; // node array for storing nodes and partial Huffman trees during the Huffman tree creation process
+unsigned numberOfData = 0; // initial count of data
 unsigned numberOfCharacters = 0; // stores the number of characters in the file
 Node* HuffmanRoot = NULL; // root of the Huffman tree
 Node* KeysRoot = NULL; // root of the binary tree containing keys
 char HuffmanCodes[256][MAX_HUFF_CODE] = {}; // contains the Huffman codes for each character in the filehe le
-int lengthOfHuffmanCodes[256] = {}; // stores the length of all Huffman codes after computing them, used for "file is too large" feature
+unsigned lengthOfHuffmanCodes[256] = {}; // stores the length of all Huffman codes after computing them, used for "file is too large" feature
 char FileTextToHuffman[MAX_FILE_SIZE*MAX_HUFF_CODE] = {}; // stores the text of the file encoded in the Huffman format (text file must be <= MAX_FILE_SIZE bytes)
 char HuffmanTreeEncryption[PREFIX_LENGTH+POSTFIX_LENGTH] = {}; // stores the encryption for the Huffman tree in prefix and postfix format so the recovery of the tree can be implemented
 char encryption[PREFIX_LENGTH+POSTFIX_LENGTH + MAX_FILE_SIZE*MAX_HUFF_CODE] = {}; // used for decryption, stores all the bytes for both the Huffman tree encryption and the file text encryption
