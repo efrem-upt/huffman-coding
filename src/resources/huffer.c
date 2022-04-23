@@ -549,7 +549,7 @@ void decryptCompressedFile(char* pathToCompressedFile) {
         strcpy(encryption, encryption + 1);
         dim--;
     }
-    if (!iterator->leftChild && !iterator->rightChild)
+    if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters)
         fprintf(uncompressedFile, "%c", iterator->key.content);
     fclose(uncompressedFile);
 }
