@@ -1,12 +1,12 @@
 # huffman-coding
-C program that allows for encryption/decryption of files into and from the Huffman coding algorithm. Small project made during my second year of Computer Engineering studies at Polytechnic University of Timișoara
+C program that allows for encryption/decryption of ASCII text files into and from the Huffman coding algorithm. Small project made during my second year of Computer Engineering studies at Polytechnic University of Timișoara
 
 ## Running the program
 
 The program can only be run via the command line.
 
 To run the program, simply choose from the following two actions:
- - encrypt a file on your system using the Huffman compression format
+ - encrypt a text file (ASCII characters only) on your system using the Huffman compression format
  - decrypt a file on your system that has already been encrypted by my program
 
 For instance, supposing you have a file test.txt on your system, located in the same fodler you have the executable on, then to encrypt the file the following command can be executed:
