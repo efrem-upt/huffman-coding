@@ -202,8 +202,9 @@ Node* parseKeysTree() {
     return HuffmanRoot;
 }
 
-void parseKeysFile(char* pathLoFile) {
-    FILE* file = fopen(pathLoFile, "r");
+int fileIterator = 0, endOfFileIndicator = 0;
+
+FILE* parseKeysFile(FILE* file) {
     if (!file) {
         fprintf(stderr, "Error on opening the specified file\n");
         exit(EXIT_FAILURE);
@@ -212,13 +213,16 @@ void parseKeysFile(char* pathLoFile) {
     char ch;
     do { // read charactes from the file and add them to the binary tree containing keys
         ch = fgetc(file);
+        fileIterator++;
         if (ch != EOF) {
             addKeyToBinaryTree(ch);
+            printf("%c",ch);
             numberOfCharacters++;
-        }
-    }while(ch != EOF);
-    fclose(file);
+        } else endOfFileIndicator = 1;
+    }while(ch != EOF && fileIterator < MAX_FILE_ITERATOR);
+    printf("\n");
     parseKeysTree(); // parse the binary tree and get Huffman tree
+    return file;
 }
 
 void getHuffmanCodes(Node* tree, char buf[MAX_HUFF_CODE]) {
@@ -243,8 +247,7 @@ void computeHuffmanCodesLength() {
     }
 }
 
-void transformFileTextToHuffman(char* pathToFile) {
-    FILE* file = fopen(pathToFile, "r");
+FILE* transformFileTextToHuffman(FILE* file) {
     if (!file) {
         fprintf(stderr, "Error on opening the file.\n");
         exit(EXIT_FAILURE);
@@ -254,15 +257,13 @@ void transformFileTextToHuffman(char* pathToFile) {
     int currentSizeOfHuffmanText = 0; // stores the length of the variable FileTextToHuffman, for storage analysis and "file is too large" function
     do { // read the file and add code representations from HuffmanCodes to the FileTextToHuffman by appending
         ch[0] = fgetc(file);
+        printf("%c", ch[0]);
+        fileIterator++;
         currentSizeOfHuffmanText += lengthOfHuffmanCodes[ch[0]];
-        if (currentSizeOfHuffmanText >= MAX_FILE_SIZE * MAX_HUFF_CODE) {
-            fprintf(stderr, "File is too large. Try a smaller size.\n");
-            freeTree(HuffmanRoot); // frees tree memory in case of error
-            exit(EXIT_FAILURE); // exits the program
-        }
         strcat(FileTextToHuffman, HuffmanCodes[ch[0]]);
-    }while(ch[0] != EOF);
-    fclose(file);
+    }while(ch[0] != EOF && fileIterator < MAX_FILE_ITERATOR);
+    printf("\n");
+    return file;
 }
 
 unsigned char byteStringToBinaryChar(char* binaryString) {
@@ -363,89 +364,112 @@ void getHuffmanTreeEncryptionPostfix(Node* tree, char buf[POSTFIX_LENGTH]) {
     }
 }
 
+void init() {
+    data[0] = NULL;
+    numberOfData = 0;
+    numberOfCharacters = 0;
+    freeTree(HuffmanRoot);
+    strcpy(FileTextToHuffman, "");
+    strcpy(HuffmanTreeEncryption, "");
+    strcpy(encryption, "");
+    fileIterator = 0;
+}
+
 void createCompressedFile(char* pathToFile) {
-    printf("Parsing file...\n");
-    parseKeysFile(pathToFile);
-    char buf[MAX_HUFF_CODE] = {};
-    printf("Getting Huffman codes...\n");
-    getHuffmanCodes(HuffmanRoot, buf);
-    computeHuffmanCodesLength();
-    printf("Getting the text's Huffman representation...\n");
-    transformFileTextToHuffman(pathToFile);
-    char prefix[PREFIX_LENGTH] = {};
-    char postfix[POSTFIX_LENGTH] = {};
-    printf("Encoding the Huffman tree...\n");
-    getHuffmanTreeEncryptionPrefix(HuffmanRoot, prefix);
-    getHuffmanTreeEncryptionPostfix(HuffmanRoot, postfix);
-    unsigned char characters_to_read = strlen(prefix);
-    unsigned char biggestNumberOfEightButSmallest = 0;
-    while (biggestNumberOfEightButSmallest < characters_to_read)
-        biggestNumberOfEightButSmallest += 8;
-    char* fixed_prefix = (char*)calloc(biggestNumberOfEightButSmallest + 1, sizeof(char));
-    if (!fixed_prefix) {
-        fprintf(stderr, "Memory error on fixing the prefix");
-        freeTree(HuffmanRoot);
-        exit(EXIT_FAILURE);
-    }
-    for (int i = 0; i < biggestNumberOfEightButSmallest; i++)
-        fixed_prefix[i] = '0';
-    for (int i = 0; i < characters_to_read; i++) {
-        fixed_prefix[biggestNumberOfEightButSmallest-1-i] = prefix[characters_to_read-1-i];
-    }
-    fixed_prefix[biggestNumberOfEightButSmallest] = '\0';
-    strcat(HuffmanTreeEncryption, fixed_prefix);
-    free(fixed_prefix);
-    strcat(HuffmanTreeEncryption, postfix);
     char filePath[FILE_PATH_LENGTH] = {};
     strcpy(filePath, pathToFile);
     char* fileExtension = strchr(filePath, '.') + 1;
     strcpy(fileExtension, "EfremHuffmanCompression");
     FILE* compressedFile = fopen(filePath,"wb");
-    if (!compressedFile) {
-        fprintf(stderr,"Error on creating compressed file");
+        if (!compressedFile) {
+            fprintf(stderr,"Error on creating compressed file");
+            freeTree(HuffmanRoot);
+            exit(EXIT_FAILURE);
+        }
+    FILE* file1 = fopen(pathToFile, "r");
+    FILE* file2 = fopen(pathToFile, "r");
+    int i = 0;
+    while (endOfFileIndicator == 0) {
+        i++;
+        init();
+        printf("Parsing file...\n");
+        parseKeysFile(file1);
+        fileIterator = 0;
+        char buf[MAX_HUFF_CODE] = {};
+        printf("Getting Huffman codes...\n");
+        getHuffmanCodes(HuffmanRoot, buf);
+        computeHuffmanCodesLength();
+        printf("Getting the text's Huffman representation...\n");
+        transformFileTextToHuffman(file2);
+        char prefix[PREFIX_LENGTH] = {};
+        char postfix[POSTFIX_LENGTH] = {};
+        printf("Encoding the Huffman tree...\n");
+        getHuffmanTreeEncryptionPrefix(HuffmanRoot, prefix);
+        getHuffmanTreeEncryptionPostfix(HuffmanRoot, postfix);
+        unsigned char characters_to_read = strlen(prefix);
+        unsigned char biggestNumberOfEightButSmallest = 0;
+        while (biggestNumberOfEightButSmallest < characters_to_read)
+            biggestNumberOfEightButSmallest += 8;
+        char* fixed_prefix = (char*)calloc(biggestNumberOfEightButSmallest + 1, sizeof(char));
+        if (!fixed_prefix) {
+            fprintf(stderr, "Memory error on fixing the prefix");
+            freeTree(HuffmanRoot);
+            exit(EXIT_FAILURE);
+        }
+        for (int i = 0; i < biggestNumberOfEightButSmallest; i++)
+            fixed_prefix[i] = '0';
+        for (int i = 0; i < characters_to_read; i++) {
+            fixed_prefix[biggestNumberOfEightButSmallest-1-i] = prefix[characters_to_read-1-i];
+        }
+        fixed_prefix[biggestNumberOfEightButSmallest] = '\0';
+        strcat(HuffmanTreeEncryption, fixed_prefix);
+        free(fixed_prefix);
+        strcat(HuffmanTreeEncryption, postfix);
+        printf("Writing header to compressed file...\n");
+        fwrite(&characters_to_read,sizeof(unsigned char),1,compressedFile);
+        fwrite(&biggestNumberOfEightButSmallest, sizeof(unsigned char), 1 , compressedFile);
+        fwrite(&numberOfCharacters, sizeof(unsigned int), 1, compressedFile);
+        printf("%d\n",numberOfCharacters);
+        char aux1[PREFIX_LENGTH + POSTFIX_LENGTH] = {};
+        strcpy(aux1,HuffmanTreeEncryption);
+        int dim1 = strlen(aux1);
+        while(dim1) {
+            char aux_byte[9] = {};
+            strncpy(aux_byte,aux1,8);
+            unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
+            fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
+            if(dim1 >= 8) {
+                strcpy(aux1,aux1+8);
+                dim1 -= 8;
+            }
+            else {
+                strcpy(aux1,aux1+dim1);
+                dim1 -= dim1;
+            }
+        }
+        printf("Writing Huffman encoded text to compressed file...\n");
+        char aux2[MAX_FILE_SIZE*MAX_HUFF_CODE] = {};
+        strcpy(aux2,FileTextToHuffman);
+        int dim2 = strlen(aux2);
+        while(dim2) {
+            char aux_byte[9] = {};
+            strncpy(aux_byte,aux2,8);
+            if (dim2 < 8) {
+                for (int i = dim2; i < 8; i++)
+                    aux_byte[i] = '0';
+                aux_byte[8] = '\0';
+                dim2 = 8;
+            }
+            unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
+            fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
+            strcpy(aux2,aux2+8);
+            dim2 -= 8;
+        }
+        printf("\n");
         freeTree(HuffmanRoot);
-        exit(EXIT_FAILURE);
-    }
-    printf("Writing header to compressed file...\n");
-    fwrite(&characters_to_read,sizeof(unsigned char),1,compressedFile);
-    fwrite(&biggestNumberOfEightButSmallest, sizeof(unsigned char), 1 , compressedFile);
-    fwrite(&numberOfCharacters, sizeof(unsigned int), 1, compressedFile);
-    char aux1[PREFIX_LENGTH + POSTFIX_LENGTH] = {};
-    strcpy(aux1,HuffmanTreeEncryption);
-    int dim1 = strlen(aux1);
-    while(dim1) {
-        char aux_byte[9] = {};
-        strncpy(aux_byte,aux1,8);
-        unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
-        fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
-        if(dim1 >= 8) {
-            strcpy(aux1,aux1+8);
-            dim1 -= 8;
-        }
-        else {
-            strcpy(aux1,aux1+dim1);
-            dim1 -= dim1;
-        }
-    }
-    printf("Writing Huffman encoded text to compressed file...\n");
-    char aux2[MAX_FILE_SIZE*MAX_HUFF_CODE] = {};
-    strcpy(aux2,FileTextToHuffman);
-    int dim2 = strlen(aux2);
-    while(dim2) {
-        char aux_byte[9] = {};
-        strncpy(aux_byte,aux2,8);
-        if (dim2 < 8) {
-            for (int i = dim2; i < 8; i++)
-                aux_byte[i] = '0';
-            aux_byte[8] = '\0';
-            dim2 = 8;
-        }
-        unsigned char generated_byte = byteStringToBinaryChar(aux_byte);
-        fwrite(&generated_byte,sizeof(unsigned char),1,compressedFile);
-        strcpy(aux2,aux2+8);
-        dim2 -= 8;
     }
     fclose(compressedFile);
+    printf("%d\n", i);
 }
 
 Node* createHuffmanTreeFromPrefix(char prefix[PREFIX_LENGTH]) {

@@ -3,6 +3,8 @@
 // the maximum number of nodes in the Huffman data creation process
 #define MAX_HUFF_CODE 257
 // the maximum length of a character's Huffman code, once it has been encrypted
+#define MAX_FILE_ITERATOR 256
+// the number of data manipulated from the file at a given time
 #define MAX_FILE_SIZE 8000
 // this number is only chosen in relation to MAX_HUFF_CODE. For example, if the text file always has
 // the worst Huffman code length of them all. This is not always the case, though. So, this MAX_FILE_SIZE
@@ -49,10 +51,10 @@ Node* getSmallestData(); // gets the node with the smallest sum of probabilities
 void addData(Node* addedNode); // adds the iteration to the data array
 void removeData(Node* searchedNode); // removes the iteration from the data array
 Node* parseKeysTree(); // parses the keys in the binary tree and returns the corresponding Huffman Tree
-void parseKeysFile(char* pathToFile); // parses the file and creates the binary tree containing the keys
+FILE* parseKeysFile(FILE* file); // parses the file and creates the binary tree containing the keys
 void getHuffmanCodes(Node* tree, char buf[256]); // extracts the Huffman codes for each character in the Huffman tree (leaf nodes)
 void computeHuffmanCodesLength(); // computes the length of all Huffman codes, used for the "file is too large" feature
-void transformFileTextToHuffman(char* pathToFile); // reads a file and transforms the file text in it's Huffman binary representation
+FILE* transformFileTextToHuffman(FILE* file); // reads a file and transforms the file text in it's Huffman binary representation
 unsigned char byteStringToBinaryChar(char* binaryString); // converts the binary string (string that contains ones and zeros) stored as a char array into a char variable that has the same binary representation (maximum 8 bits)
 void charToBinaryString(unsigned char ch, char buf[9]); // converts a char to it's binary representation (8 bits)
 void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[PREFIX_LENGTH]); // used in Huffman file encryption algorithm (for the header)
