@@ -1,6 +1,10 @@
 #include "huffer.h"
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
+#define EOF 255
+
+int dimFile = 0;
 
 void freeTree(Node* tree) {
     if(tree) {
@@ -13,7 +17,7 @@ void freeTree(Node* tree) {
 }
 
 
-Node* addKeyToBinaryTree(char key) {
+Node* addKeyToBinaryTree(unsigned char key) {
     if (!KeysRoot) { // if there is no key in the tree
         // create the tree with one node
         KeysRoot = (Node*)malloc(sizeof(Node));
@@ -58,7 +62,7 @@ Node* addKeyToBinaryTree(char key) {
     return newNode;
 }
 
-void removeKeyFromBinaryTree(char key) {
+void removeKeyFromBinaryTree(unsigned char key) {
     if (KeysRoot == NULL) // if there is no node in the tree
         return;
     Node* iterator = KeysRoot;
@@ -210,17 +214,16 @@ FILE* parseKeysFile(FILE* file) {
         exit(EXIT_FAILURE);
     }
 
-    char ch;
+    unsigned char ch;
+    int i = 0;
     do { // read charactes from the file and add them to the binary tree containing keys
         ch = fgetc(file);
         fileIterator++;
         if (ch != EOF) {
             addKeyToBinaryTree(ch);
-            printf("%c",ch);
             numberOfCharacters++;
         } else endOfFileIndicator = 1;
     }while(ch != EOF && fileIterator < MAX_FILE_ITERATOR);
-    printf("\n");
     parseKeysTree(); // parse the binary tree and get Huffman tree
     return file;
 }
@@ -257,12 +260,10 @@ FILE* transformFileTextToHuffman(FILE* file) {
     int currentSizeOfHuffmanText = 0; // stores the length of the variable FileTextToHuffman, for storage analysis and "file is too large" function
     do { // read the file and add code representations from HuffmanCodes to the FileTextToHuffman by appending
         ch[0] = fgetc(file);
-        printf("%c", ch[0]);
         fileIterator++;
         currentSizeOfHuffmanText += lengthOfHuffmanCodes[ch[0]];
         strcat(FileTextToHuffman, HuffmanCodes[ch[0]]);
     }while(ch[0] != EOF && fileIterator < MAX_FILE_ITERATOR);
-    printf("\n");
     return file;
 }
 
@@ -388,9 +389,12 @@ void createCompressedFile(char* pathToFile) {
         }
     FILE* file1 = fopen(pathToFile, "r");
     FILE* file2 = fopen(pathToFile, "r");
+    FILE* file3 = fopen(pathToFile, "r");
+    fseek(file3, 0, SEEK_END);
+    dimFile = ftell(file3);
+    fclose(file3);
     int i = 0;
     while (endOfFileIndicator == 0) {
-        i++;
         init();
         printf("Parsing file...\n");
         parseKeysFile(file1);
@@ -429,10 +433,14 @@ void createCompressedFile(char* pathToFile) {
         fwrite(&characters_to_read,sizeof(unsigned char),1,compressedFile);
         fwrite(&biggestNumberOfEightButSmallest, sizeof(unsigned char), 1 , compressedFile);
         fwrite(&numberOfCharacters, sizeof(unsigned int), 1, compressedFile);
-        printf("%d\n",numberOfCharacters);
         char aux1[PREFIX_LENGTH + POSTFIX_LENGTH] = {};
         strcpy(aux1,HuffmanTreeEncryption);
         int dim1 = strlen(aux1);
+        char aux2[MAX_FILE_ITERATOR*MAX_HUFF_CODE] = {};
+        strcpy(aux2,FileTextToHuffman);
+        int dim2 = strlen(aux2);
+        fwrite(&dim1,sizeof(int), 1, compressedFile);
+        fwrite(&dim2,sizeof(int), 1, compressedFile);
         while(dim1) {
             char aux_byte[9] = {};
             strncpy(aux_byte,aux1,8);
@@ -448,9 +456,6 @@ void createCompressedFile(char* pathToFile) {
             }
         }
         printf("Writing Huffman encoded text to compressed file...\n");
-        char aux2[MAX_FILE_SIZE*MAX_HUFF_CODE] = {};
-        strcpy(aux2,FileTextToHuffman);
-        int dim2 = strlen(aux2);
         while(dim2) {
             char aux_byte[9] = {};
             strncpy(aux_byte,aux2,8);
@@ -465,11 +470,9 @@ void createCompressedFile(char* pathToFile) {
             strcpy(aux2,aux2+8);
             dim2 -= 8;
         }
-        printf("\n");
-        freeTree(HuffmanRoot);
     }
+    freeTree(HuffmanRoot);
     fclose(compressedFile);
-    printf("%d\n", i);
 }
 
 Node* createHuffmanTreeFromPrefix(char prefix[PREFIX_LENGTH]) {
@@ -507,9 +510,12 @@ void updateHuffmanTreeFromPostfix(Node* tree, char postfix[POSTFIX_LENGTH]) {
     }
 }
 
+int dim1 = 0;
+int dim2 = 0;
+int auxDim2 = 0;
 
-void recoverHuffmanTree(char* pathToCompressedFile) {
-    FILE* compressedFile = fopen(pathToCompressedFile, "rb");
+void recoverHuffmanTree(FILE* compressedFile) {
+
     if (!compressedFile) {
         fprintf(stderr,"Error on reading the compressed file");
         freeTree(HuffmanRoot);
@@ -521,13 +527,21 @@ void recoverHuffmanTree(char* pathToCompressedFile) {
     fread(&characters_to_read,sizeof(unsigned char), 1, compressedFile);
     fread(&correct_characters,sizeof(unsigned char), 1, compressedFile);
     fread(&numberOfCharacters,sizeof(unsigned int), 1, compressedFile);
+    if (numberOfCharacters == 0)
+        return;
+    fread(&dim1,sizeof(int), 1, compressedFile);
+    fread(&dim2,sizeof(int), 1, compressedFile);
+    auxDim2 = dim2;
     unsigned char aux = 0;
-    while(fread(&aux,sizeof(unsigned char), 1, compressedFile) == 1) {
+    while(dim1 + dim2 > 0 && fread(&aux,sizeof(unsigned char), 1, compressedFile) == 1) {
         char binary_representation[9] = {};
         charToBinaryString(aux, binary_representation);
         strcat(encryption, binary_representation);
+        if (dim1 > 0)
+            dim1 -= 8;
+        else if (dim2 > 0)
+            dim2 -= 8;
     }
-    fclose(compressedFile);
     char prefix[PREFIX_LENGTH] = {};
     strncpy(prefix, encryption, correct_characters);
     char* fixed_prefix = prefix + (correct_characters - characters_to_read);
@@ -546,37 +560,44 @@ void recoverHuffmanTree(char* pathToCompressedFile) {
 }
 
 void decryptCompressedFile(char* pathToCompressedFile) {
-    printf("Recovering the Huffman tree from the header...\n");
-    recoverHuffmanTree(pathToCompressedFile);
-    Node* iterator = HuffmanRoot;
-    int dim = strlen(encryption);
+    FILE* compressedFile = fopen(pathToCompressedFile, "rb");
     char filePath[FILE_PATH_LENGTH] = {};
     strcpy(filePath, pathToCompressedFile);
     char* fileExtension = strchr(filePath, '.');
     strcpy(fileExtension, "_decrypted.txt");
     FILE* uncompressedFile = fopen(filePath, "w");
     if (!uncompressedFile) {
-        fprintf(stderr, "Couldn't create the uncompressed file with fopen");
-        freeTree(HuffmanRoot);
-        exit(EXIT_FAILURE);
-    }
-    printf("Decrypting the Huffman encoded text into the decrypted file...\n");
-    while(numberOfCharacters) {
-        if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters) {
-            fprintf(uncompressedFile, "%c", iterator->key.content);
-            iterator = HuffmanRoot;
-            numberOfCharacters--;
+            fprintf(stderr, "Couldn't create the uncompressed file with fopen");
+            freeTree(HuffmanRoot);
+            exit(EXIT_FAILURE);
         }
-        if (encryption[0] == '0')
-            iterator = iterator->leftChild;
-        else iterator = iterator->rightChild;
-        strcpy(encryption, encryption + 1);
-        dim--;
+
+    while(!feof(compressedFile)) {
+        printf("Recovering the Huffman tree from the header...\n");
+        strcpy(encryption,"");
+        recoverHuffmanTree(compressedFile);
+        Node* iterator = HuffmanRoot;
+        if (iterator == NULL)
+            break;
+        printf("Decrypting the Huffman encoded text into the decrypted file...\n");
+        while(numberOfCharacters) {
+            if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters) {
+                fprintf(uncompressedFile, "%c", iterator->key.content);
+                iterator = HuffmanRoot;
+                numberOfCharacters--;
+            }
+            if (encryption[0] == '0')
+                iterator = iterator->leftChild;
+            else iterator = iterator->rightChild;
+            strcpy(encryption, encryption + 1);
+        }
+        if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters)
+            fprintf(uncompressedFile, "%c", iterator->key.content);
+        freeTree(HuffmanRoot);
+        HuffmanRoot = NULL;
     }
-    if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters)
-        fprintf(uncompressedFile, "%c", iterator->key.content);
+    fclose(compressedFile);
     fclose(uncompressedFile);
 }
-
 
 

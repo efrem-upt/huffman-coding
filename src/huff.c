@@ -10,14 +10,13 @@ int main(int argc, char* argv[]) {
 
     if (strcmp(argv[1], "enc") == 0) {
         createCompressedFile(argv[2]);
-        printf("Success. Encrypted given file.");
+        printf("\nSuccess. Encrypted given file.");
     }
     else if (strcmp(argv[1], "dec") == 0) {
         decryptCompressedFile(argv[2]);
-        printf("Success. Decrypted given file.");
+        printf("\nSuccess. Decrypted given file.");
     }
     else fprintf(stderr, "Wrong command for first parameter. The first parameter must be either the word <<enc>> or the word <<dec>>");
-    freeTree(HuffmanRoot);
 
     return 0;
 }
