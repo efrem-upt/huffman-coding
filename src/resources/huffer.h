@@ -5,9 +5,9 @@
 // the maximum length of a character's Huffman code, once it has been encrypted
 #define MAX_FILE_ITERATOR 8000
 // the number of data manipulated from the file at a given time
-#define FILE_PATH_LENGTH 64
+#define FILE_PATH_LENGTH 260
 // the maximum length a file path given as argument can take
-#define PREFIX_LENGTH 300
+#define PREFIX_LENGTH 256 + 255 + 1
 // the length the encoded Huffman tree prefix can take
 #define POSTFIX_LENGTH 256*8 + 1 // the length the encoded Huffman tree postfix can take
 // reasoning for choosing the PREFIX_LENGTH and POSTFIX_LENGTH: there can be a maximum of 256 different characters in a file (from the ASCII set), and so the Huffman tree created can have up to 255 special characters.
