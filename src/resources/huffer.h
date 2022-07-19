@@ -3,11 +3,11 @@
 // the maximum number of nodes in the Huffman data creation process
 #define MAX_HUFF_CODE 257
 // the maximum length of a character's Huffman code, once it has been encrypted
-#define MAX_FILE_ITERATOR 8000
+#define MAX_FILE_ITERATOR 32000
 // the number of data manipulated from the file at a given time
-#define FILE_PATH_LENGTH 64
+#define FILE_PATH_LENGTH 260
 // the maximum length a file path given as argument can take
-#define PREFIX_LENGTH 300
+#define PREFIX_LENGTH 256 + 255 + 1
 // the length the encoded Huffman tree prefix can take
 #define POSTFIX_LENGTH 256*8 + 1 // the length the encoded Huffman tree postfix can take
 // reasoning for choosing the PREFIX_LENGTH and POSTFIX_LENGTH: there can be a maximum of 256 different characters in a file (from the ASCII set), and so the Huffman tree created can have up to 255 special characters.
@@ -31,14 +31,14 @@ typedef struct Node {
 
 Node* data[MAX_DATA] = {}; // node array for storing nodes and partial Huffman trees during the Huffman tree creation process
 unsigned numberOfData = 0; // initial count of data
-unsigned numberOfCharacters = 0; // stores the number of characters in the file
+unsigned short numberOfCharacters = 0; // stores the number of characters in the file
 Node* HuffmanRoot = NULL; // root of the Huffman tree
 Node* KeysRoot = NULL; // root of the binary tree containing keys
 char HuffmanCodes[256][MAX_HUFF_CODE] = {}; // contains the Huffman codes for each character in the filehe le
 unsigned lengthOfHuffmanCodes[256] = {}; // stores the length of all Huffman codes after computing them, used for "file is too large" feature
-char FileTextToHuffman[MAX_FILE_ITERATOR*MAX_HUFF_CODE] = {}; // stores the text of the file encoded in the Huffman format (text file must be <= MAX_FILE_SIZE bytes)
+char* FileTextToHuffman = NULL; // stores the text of the file encoded in the Huffman format (text file must be <= MAX_FILE_SIZE bytes)
 char HuffmanTreeEncryption[PREFIX_LENGTH+POSTFIX_LENGTH] = {}; // stores the encryption for the Huffman tree in prefix and postfix format so the recovery of the tree can be implemented
-char encryption[PREFIX_LENGTH+POSTFIX_LENGTH + MAX_FILE_ITERATOR*MAX_HUFF_CODE] = {}; // used for decryption, stores all the bytes for both the Huffman tree encryption and the file text encryption
+char* encryption = NULL; // used for decryption, stores all the bytes for both the Huffman tree encryption and the file text encryption
 void freeTree(Node* tree); // frees all the tree memory created using malloc
 Node* addKeyToBinaryTree(unsigned char key); // adds the specified key in the binary tree containing all the keys and returns the node created
 void removeKeyFromBinaryTree(unsigned char key); // removes the specified key in the binary tree containing all the keys
