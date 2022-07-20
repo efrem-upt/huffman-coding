@@ -14,6 +14,7 @@
 // Thus, the total number of nodes present in a Huffman tree with 256 different characters can be 256 + 255. For the prefix, 300 characters is enough for all scenarios. For the postfix, we store chunks of 8 bits for each character
 // present in the Huffman tree. We can have a maximum number of 256 different characters (leaf nodes), so total size for postfix can be 256*8. Adding all up, the total size of the ecnryption of any Huffman tree
 // with maximum 256 characters, using this format, is PREFIX_LENGTH + POSTFIX_LENGTH.
+#define PROGAM_VERSION "0.1.0"
 
 
 typedef struct KeyType {
@@ -41,6 +42,7 @@ char* FileTextToHuffman = NULL; // stores the text of the file encoded in the Hu
 char HuffmanTreeEncryption[PREFIX_LENGTH+POSTFIX_LENGTH] = {}; // stores the encryption for the Huffman tree in prefix and postfix format so the recovery of the tree can be implemented
 char* encryption = NULL; // used for decryption, stores all the bytes for both the Huffman tree encryption and the file text encryption
 void freeTree(Node* tree); // frees all the tree memory created using malloc
+void printHelp(); // prints program help on the screen
 void addKey(unsigned char key); // adds the specified key in the root array containing all the keys
 void removeKey(unsigned char key); // removes the specified key from the root array
 unsigned char findExistentKey(); // returns the first key it finds in the root array
