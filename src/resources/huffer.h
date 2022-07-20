@@ -19,7 +19,7 @@
 typedef struct KeyType {
     // Data Structure for the key
     unsigned char content;
-    unsigned long long probability;
+    unsigned short probability;
 }KeyType;
 
 typedef struct Node {
@@ -33,10 +33,10 @@ Node* data[MAX_DATA] = {}; // node array for storing nodes and partial Huffman t
 unsigned numberOfData = 0; // initial count of data
 unsigned short numberOfCharacters = 0; // stores the number of characters in the file
 Node* HuffmanRoot = NULL; // root of the Huffman tree
-unsigned short root[256];
-unsigned short numberOfKeys = 0;
+unsigned short root[256]; // for storing frequencies of characters (keys) being read
+unsigned short numberOfKeys = 0; // number of keys in the root array (that have root[i] > 0, which means they have a frequency in the file)
 char HuffmanCodes[256][MAX_HUFF_CODE] = {}; // contains the Huffman codes for each character in the original  file
-unsigned lengthOfHuffmanCodes[256] = {}; // stores the length of all Huffman codes after computing them, used for "file is too large" feature
+unsigned short lengthOfHuffmanCodes[256] = {}; // stores the length of all Huffman codes after computing them, used for "file is too large" feature
 char* FileTextToHuffman = NULL; // stores the text of the file encoded in the Huffman format (text file must be <= MAX_FILE_SIZE bytes)
 char HuffmanTreeEncryption[PREFIX_LENGTH+POSTFIX_LENGTH] = {}; // stores the encryption for the Huffman tree in prefix and postfix format so the recovery of the tree can be implemented
 char* encryption = NULL; // used for decryption, stores all the bytes for both the Huffman tree encryption and the file text encryption

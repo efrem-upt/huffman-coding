@@ -12,11 +12,11 @@ int main(int argc, char* argv[]) {
     char *encryptionAux = encryption;
     if (strcmp(argv[1], "enc") == 0) {
         createCompressedFile(argv[2]);
-        printf("\nSuccess. Encrypted given file.");
+        printf("\nSuccess. Encoded given file.");
     }
     else if (strcmp(argv[1], "dec") == 0) {
         decryptCompressedFile(argv[2]);
-        printf("\nSuccess. Decrypted given file.");
+        printf("\nSuccess. Decoded given file.");
     }
     else fprintf(stderr, "Wrong command for first parameter. The first parameter must be either the word <<enc>> or the word <<dec>>");
     free(encryptionAux);

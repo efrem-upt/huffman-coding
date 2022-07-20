@@ -1,6 +1,10 @@
 #include "huffer.h"
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
+#include <math.h>
+
+unsigned long long sizeOfFile = 0;
 
 void freeTree(Node* tree) {
     if(tree) {
@@ -13,12 +17,14 @@ void freeTree(Node* tree) {
 }
 
 void addKey(unsigned char key) {
+    // add key to the array of keys
     if (root[key] == 0)
         numberOfKeys++;
     root[key]++;
 }
 
 void removeKey(unsigned char key) {
+    // removes key from array of keys
     if (root[key] > 0) {
         root[key] = 0;
         numberOfKeys--;
@@ -26,7 +32,8 @@ void removeKey(unsigned char key) {
 }
 
 unsigned char findExistentKey() {
-    for (unsigned char i = 0; i < 256; i++)
+    // returns the first key it finds from the array of keys
+    for (unsigned short i = 0; i < 256; i++)
         if (root[i] > 0)
             return i;
     return -1;
@@ -41,9 +48,9 @@ void addData(Node* addedNode) {
 }
 
 void removeData(Node* searchedNode) {
-    for (unsigned long long i = 0; i < numberOfData; i++) {
+    for (unsigned short i = 0; i < numberOfData; i++) {
         if (data[i] == searchedNode) { // if node is found
-            for (unsigned long long j = i; j < numberOfData; j++)
+            for (unsigned short j = i; j < numberOfData; j++)
                 data[j] = data[j + 1]; // move elements to the left
             numberOfData--; // decrement numberOfData
             break;
@@ -53,11 +60,11 @@ void removeData(Node* searchedNode) {
 
 Node* getSmallestData() {
     Node* smallestData = data[0];
-    unsigned long long smallestDataProbability; // for finding minimum probability
+    unsigned short smallestDataProbability; // for finding minimum probability
     if (smallestData)
         smallestDataProbability = data[0]->key.probability;
 
-    for (unsigned long long i = 1; i < numberOfData; i++) {
+    for (unsigned short i = 1; i < numberOfData; i++) {
         if (data[i]->key.probability < smallestDataProbability) { // if current key probability is smaller than the one we have
             smallestDataProbability = data[i]->key.probability; // update smallest probability
             smallestData = data[i]; // update smallest node found
@@ -69,8 +76,8 @@ Node* getSmallestData() {
 Node* parseKeysTree() {
     if (numberOfKeys == 0)
         return NULL;
-    else if (numberOfKeys == 1) { // if tree contains only one node
-        // creates the Huffman tree containing the copy of the same node
+    else if (numberOfKeys == 1) { // if array contains only one key
+        // creates the Huffman tree containing the copy of the same key
          HuffmanRoot = (Node* )malloc(sizeof(Node));
          HuffmanRoot->key.content = findExistentKey();
          HuffmanRoot->leftChild = NULL;
@@ -79,7 +86,7 @@ Node* parseKeysTree() {
          return HuffmanRoot; // exit function
     }
     while (numberOfKeys > 0) { // as long as we have keys
-        unsigned char auxNode = findExistentKey(); // get the root of the keys tree
+        unsigned char auxNode = findExistentKey(); // extract root array element
         // add key to data
         Node* copyNode = (Node* )malloc(sizeof(Node));
         copyNode->key.content = auxNode;
@@ -87,7 +94,7 @@ Node* parseKeysTree() {
         copyNode->leftChild = NULL;
         copyNode->rightChild = NULL;
         addData(copyNode);
-        removeKey(auxNode); // removes the current root from the binary tree (refresh the binary tree)
+        removeKey(auxNode); // removes the current element from the keys array (refresh the keys array)
     }
     do { // as long as we have data nodes
         Node* smallestNode = getSmallestData(); // get smallest data
@@ -99,8 +106,8 @@ Node* parseKeysTree() {
         newRoot->key.content = '*';
         newRoot->leftChild = smallestNode;
         newRoot->rightChild = secondSmallestNode;
-        unsigned long long leftProbability = (newRoot->leftChild) ? newRoot->leftChild->key.probability : 0;
-        unsigned long long rightProbability = (newRoot->rightChild) ? newRoot->rightChild->key.probability : 0;
+        unsigned short leftProbability = (newRoot->leftChild) ? newRoot->leftChild->key.probability : 0;
+        unsigned short rightProbability = (newRoot->rightChild) ? newRoot->rightChild->key.probability : 0;
         newRoot->key.probability = leftProbability + rightProbability;
         HuffmanRoot = newRoot; // update the HuffmanRoot
         addData(HuffmanRoot); // adds the new node to data to be used in the selection process
@@ -157,6 +164,8 @@ void computeHuffmanCodesLength() {
 
 char* mystrcat( char* dest, char* src )
 {
+     // for performance purposes, it allows for faster concatenation of a lot of strings
+     // used for encoding of Huffman text, and also for decoding of the Huffman encoding
      while (*dest) dest++;
      while (*dest++ = *src++);
      return --dest;
@@ -291,40 +300,62 @@ void init() {
     fileIterator = 0;
 }
 
+unsigned long long getSizeOfFile(const char* name)
+{
+    FILE* file = fopen(name, "rb");
+    HANDLE hFile = CreateFile(name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(hFile == INVALID_HANDLE_VALUE)
+        return -1; // error condition, could call GetLastError to find out more
+
+    LARGE_INTEGER size;
+    if(!GetFileSizeEx(hFile, &size))
+    {
+        CloseHandle(hFile);
+        return -1; // error condition, could call GetLastError to find out more
+    }
+
+    CloseHandle(hFile);
+    fclose(file);
+    return (unsigned long long)size.QuadPart;
+}
+
 void createCompressedFile(char* pathToFile) {
+    sizeOfFile = getSizeOfFile(pathToFile);
     char filePath[FILE_PATH_LENGTH] = {};
     strcpy(filePath, pathToFile);
     char* fileExtension = strchr(filePath, '.');
     char fileExtensionData[FILE_PATH_LENGTH] = {};
     strcpy(fileExtensionData,fileExtension + 1);
     char fileExtensionLength = strlen(fileExtension + 1);
-    strcpy(fileExtension, "_encrypted.EfremHuffmanCompression");
+    strcpy(fileExtension, "_encoded.EfremHuffmanCompression");
     FILE* compressedFile = fopen(filePath,"wb");
         if (!compressedFile) {
             fprintf(stderr,"Error on creating compressed file");
             freeTree(HuffmanRoot);
             exit(EXIT_FAILURE);
         }
+    fwrite(&sizeOfFile,sizeof(unsigned long long),1,compressedFile);
     fwrite(&fileExtensionLength,sizeof(char),1,compressedFile);
     for (int i = 0; i < fileExtensionLength; i++)
         fwrite(&fileExtensionData[i],sizeof(char),1,compressedFile);
     FILE* file1 = fopen(pathToFile, "rb");
     FILE* file2 = fopen(pathToFile, "rb");
 
+    printf("Progress: ");
+    double progress = 0;
+    double progressIncrement = 0;
+    progressIncrement = 100 / ceil((sizeOfFile * 1.0 / MAX_FILE_ITERATOR));
+    printf("%d%%", (unsigned int)progress);
     while (endOfFileIndicator == 0) {
         init();
-        printf("Parsing file...\n");
         parseKeysFile(file1);
         fileIterator = 0;
         char buf[MAX_HUFF_CODE] = {};
-        printf("Getting Huffman codes...\n");
         getHuffmanCodes(HuffmanRoot, buf);
         computeHuffmanCodesLength();
-        printf("Getting the text's Huffman representation...\n");
         transformFileTextToHuffman(file2);
         char prefix[PREFIX_LENGTH] = {};
         char postfix[POSTFIX_LENGTH] = {};
-        printf("Encoding the Huffman tree...\n");
         getHuffmanTreeEncryptionPrefix(HuffmanRoot, prefix);
         getHuffmanTreeEncryptionPostfix(HuffmanRoot, postfix);
         unsigned short int characters_to_read = strlen(prefix);
@@ -348,7 +379,6 @@ void createCompressedFile(char* pathToFile) {
         p = mystrcat(p, fixed_prefix);
         free(fixed_prefix);
         p = mystrcat(p, postfix);
-        printf("Writing header to compressed file...\n");
         fwrite(&characters_to_read,sizeof(unsigned short int),1,compressedFile);
         fwrite(&biggestNumberOfEightButSmallest, sizeof(unsigned short int), 1 , compressedFile);
         fwrite(&numberOfCharacters, sizeof(unsigned short int), 1, compressedFile);
@@ -374,7 +404,6 @@ void createCompressedFile(char* pathToFile) {
                 dim1 -= dim1;
             }
         }
-        printf("Writing Huffman encoded text to compressed file...\n");
 
         while(dim2) {
             char aux_byte[9] = {};
@@ -390,6 +419,20 @@ void createCompressedFile(char* pathToFile) {
             aux2 = aux2 + 8;
             dim2 -= 8;
         }
+        if (progress < 10)
+            printf("\b\b");
+        else
+            printf("\b\b\b");
+        progress += progressIncrement;
+        printf("%d%%",(unsigned int)progress);
+    }
+    if ((unsigned int)progress < 10) {
+        printf("\b\b");
+        printf("%d%%", 100);
+    }
+    else if ((unsigned int)progress < 100) {
+        printf("\b\b\b");
+        printf("%d%%", 100);
     }
     freeTree(HuffmanRoot);
     fclose(compressedFile);
@@ -490,6 +533,7 @@ void decryptCompressedFile(char* pathToCompressedFile) {
     FILE* compressedFile = fopen(pathToCompressedFile, "rb");
     char fileExtensionLength;
     char fileExtensionData[FILE_PATH_LENGTH] = {};
+    fread(&sizeOfFile,sizeof(unsigned long long),1,compressedFile);
     fread(&fileExtensionLength,1,sizeof(char),compressedFile);
     for (int i = 0; i < fileExtensionLength; i++)
         fread(&fileExtensionData[i],1,sizeof(char),compressedFile);
@@ -497,7 +541,7 @@ void decryptCompressedFile(char* pathToCompressedFile) {
     strcpy(filePath, pathToCompressedFile);
     char* fileExtension = strchr(filePath, '.');
     char fileExtensionNew[FILE_PATH_LENGTH] = {};
-    strcpy(fileExtensionNew,"_decrypted.");
+    strcpy(fileExtensionNew,"_decoded.");
     strcat(fileExtensionNew,fileExtensionData);
     strcpy(fileExtension, fileExtensionNew);
     FILE* uncompressedFile = fopen(filePath, "wb");
@@ -507,14 +551,18 @@ void decryptCompressedFile(char* pathToCompressedFile) {
             exit(EXIT_FAILURE);
         }
 
+    printf("Progress: ");
+    double progress = 0;
+    double progressIncrement = 0;
+    progressIncrement = 100 / ceil((sizeOfFile * 1.0 / MAX_FILE_ITERATOR));
+    printf("%d%%", (unsigned int)progress);
+    int i = 0;
     while(!feof(compressedFile)) {
-        printf("Recovering the Huffman tree from the header...\n");
         strcpy(encryption,"");
         recoverHuffmanTree(compressedFile);
         Node* iterator = HuffmanRoot;
         if (iterator == NULL)
             break;
-        printf("Decrypting the Huffman encoded text into the decrypted file...\n");
         int i = 0;
         while(numberOfCharacters) {
             i++;
@@ -531,8 +579,22 @@ void decryptCompressedFile(char* pathToCompressedFile) {
         encryption = encryption - i;
         if (!iterator->leftChild && !iterator->rightChild && numberOfCharacters)
             fwrite(&iterator->key.content,1, sizeof(char), uncompressedFile);
+         if (progress < 10)
+            printf("\b\b");
+        else
+            printf("\b\b\b");
+        progress += progressIncrement;
+        printf("%d%%",(unsigned int)progress);
         freeTree(HuffmanRoot);
         HuffmanRoot = NULL;
+    }
+    if ((unsigned int)progress < 10) {
+        printf("\b\b");
+        printf("%d%%", 100);
+    }
+    else if ((unsigned int)progress < 100) {
+        printf("\b\b\b");
+        printf("%d%%", 100);
     }
     fclose(compressedFile);
     fclose(uncompressedFile);
