@@ -129,7 +129,7 @@ int fileIterator = 0, endOfFileIndicator = 0;
 
 FILE* parseKeysFile(FILE* file) {
     if (!file) {
-        fprintf(stderr, "Error on opening the specified file\n");
+        fprintf(stderr, "Error on opening the specified file.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -299,7 +299,7 @@ void createCompressedFile(char* pathToFile) {
     strcpy(fileExtension, "_encoded.EfremHuffmanCompression");
     FILE* compressedFile = fopen(filePath,"wb");
         if (!compressedFile) {
-            fprintf(stderr,"Error on creating compressed file");
+            fprintf(stderr,"Error on creating compressed file.\n");
             freeTree(HuffmanRoot);
             exit(EXIT_FAILURE);
         }
@@ -337,7 +337,7 @@ void createCompressedFile(char* pathToFile) {
             biggestNumberOfEightButSmallest += 8;
         char* fixed_prefix = (char*)calloc(biggestNumberOfEightButSmallest + 1, sizeof(char));
         if (!fixed_prefix) {
-            fprintf(stderr, "Memory error on fixing the prefix");
+            fprintf(stderr, "Memory error on fixing the prefix.\n");
             freeTree(HuffmanRoot);
             exit(EXIT_FAILURE);
         }
@@ -416,7 +416,7 @@ Node* createHuffmanTreeFromPrefix(char prefix[PREFIX_LENGTH]) {
             return NULL;
         Node* tree = (Node*)malloc(sizeof(Node));
         if (!tree) {
-            fprintf(stderr,"Memory error on creating Huffman tree from prefix");
+            fprintf(stderr,"Memory error on creating Huffman tree from prefix.\n");
             freeTree(HuffmanRoot);
             exit(EXIT_FAILURE);
         }
@@ -456,7 +456,7 @@ int auxDim2 = 0;
 void recoverHuffmanTree(FILE* compressedFile) {
 
     if (!compressedFile) {
-        fprintf(stderr,"Error on reading the compressed file");
+        fprintf(stderr,"Error on reading the compressed file.\n");
         freeTree(HuffmanRoot);
         exit(EXIT_FAILURE);
     }
@@ -504,6 +504,10 @@ void recoverHuffmanTree(FILE* compressedFile) {
 
 void decryptCompressedFile(char* pathToCompressedFile) {
     FILE* compressedFile = fopen(pathToCompressedFile, "rb");
+    if (!compressedFile) {
+        fprintf(stderr,"Error on reading the compressed file.\n");
+        exit(EXIT_FAILURE);
+    }
     char fileExtensionLength;
     char fileExtensionData[FILE_PATH_LENGTH] = {};
     fread(&sizeOfFile,sizeof(unsigned long long),1,compressedFile);
@@ -519,7 +523,7 @@ void decryptCompressedFile(char* pathToCompressedFile) {
     strcpy(fileExtension, fileExtensionNew);
     FILE* uncompressedFile = fopen(filePath, "wb");
     if (!uncompressedFile) {
-            fprintf(stderr, "Couldn't create the uncompressed file with fopen");
+            fprintf(stderr, "Couldn't create the uncompressed file with fopen.\n");
             freeTree(HuffmanRoot);
             exit(EXIT_FAILURE);
         }
