@@ -100,6 +100,7 @@ An extra 2 bytes of the header will be used to store the number of encoded Huffm
 <p align="center">
   <img src="https://github.com/dragosefrem/huffman-coding/blob/readme-changes/docs/Demo.gif" width = "800" height = "500">
 </p>
+
 ## License
 
 [GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)
