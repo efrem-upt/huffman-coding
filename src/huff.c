@@ -7,19 +7,19 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Entering less or more than 2 arguments will not work");
         return 0;
     }
-    encryption = (char*)calloc((PREFIX_LENGTH+POSTFIX_LENGTH + MAX_FILE_ITERATOR*MAX_HUFF_CODE), sizeof(char));
-    FileTextToHuffman = (char*)calloc((MAX_FILE_ITERATOR*MAX_HUFF_CODE), sizeof(char));
+    encryption = (char*)calloc((PREFIX_LENGTH+POSTFIX_LENGTH + MAX_FILE_ITERATOR*MAX_HUFF_CODE + 1), sizeof(char));
+    FileTextToHuffman = (char*)calloc((MAX_FILE_ITERATOR*MAX_HUFF_CODE + 1), sizeof(char));
+    char *encryptionAux = encryption;
     if (strcmp(argv[1], "enc") == 0) {
         createCompressedFile(argv[2]);
-        printf("\nSuccess. Encrypted given file.");
+        printf("\nSuccess. Encoded given file.");
     }
     else if (strcmp(argv[1], "dec") == 0) {
         decryptCompressedFile(argv[2]);
-        printf("\nSuccess. Decrypted given file.");
+        printf("\nSuccess. Decoded given file.");
     }
     else fprintf(stderr, "Wrong command for first parameter. The first parameter must be either the word <<enc>> or the word <<dec>>");
-
-    free(encryption);
+    free(encryptionAux);
     free(FileTextToHuffman);
     return 0;
 }

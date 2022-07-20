@@ -1,11 +1,11 @@
 #include <stdio.h>
-#define MAX_DATA 256
+#define MAX_DATA 257
 // the maximum number of nodes in the Huffman data creation process
 #define MAX_HUFF_CODE 257
 // the maximum length of a character's Huffman code, once it has been encrypted
-#define MAX_FILE_ITERATOR 32000
+#define MAX_FILE_ITERATOR 65535
 // the number of data manipulated from the file at a given time
-#define FILE_PATH_LENGTH 260
+#define FILE_PATH_LENGTH 300
 // the maximum length a file path given as argument can take
 #define PREFIX_LENGTH 256 + 255 + 1
 // the length the encoded Huffman tree prefix can take
@@ -19,7 +19,7 @@
 typedef struct KeyType {
     // Data Structure for the key
     unsigned char content;
-    unsigned long long probability;
+    unsigned short probability;
 }KeyType;
 
 typedef struct Node {
@@ -33,15 +33,17 @@ Node* data[MAX_DATA] = {}; // node array for storing nodes and partial Huffman t
 unsigned numberOfData = 0; // initial count of data
 unsigned short numberOfCharacters = 0; // stores the number of characters in the file
 Node* HuffmanRoot = NULL; // root of the Huffman tree
-Node* KeysRoot = NULL; // root of the binary tree containing keys
-char HuffmanCodes[256][MAX_HUFF_CODE] = {}; // contains the Huffman codes for each character in the filehe le
-unsigned lengthOfHuffmanCodes[256] = {}; // stores the length of all Huffman codes after computing them, used for "file is too large" feature
+unsigned short root[256]; // for storing frequencies of characters (keys) being read
+unsigned short numberOfKeys = 0; // number of keys in the root array (that have root[i] > 0, which means they have a frequency in the file)
+char HuffmanCodes[256][MAX_HUFF_CODE] = {}; // contains the Huffman codes for each character in the original  file
+unsigned short lengthOfHuffmanCodes[256] = {}; // stores the length of all Huffman codes after computing them, used for "file is too large" feature
 char* FileTextToHuffman = NULL; // stores the text of the file encoded in the Huffman format (text file must be <= MAX_FILE_SIZE bytes)
 char HuffmanTreeEncryption[PREFIX_LENGTH+POSTFIX_LENGTH] = {}; // stores the encryption for the Huffman tree in prefix and postfix format so the recovery of the tree can be implemented
 char* encryption = NULL; // used for decryption, stores all the bytes for both the Huffman tree encryption and the file text encryption
 void freeTree(Node* tree); // frees all the tree memory created using malloc
-Node* addKeyToBinaryTree(unsigned char key); // adds the specified key in the binary tree containing all the keys and returns the node created
-void removeKeyFromBinaryTree(unsigned char key); // removes the specified key in the binary tree containing all the keys
+void addKey(unsigned char key); // adds the specified key in the root array containing all the keys
+void removeKey(unsigned char key); // removes the specified key from the root array
+unsigned char findExistentKey(); // returns the first key it finds in the root array
 Node* getSmallestData(); // gets the node with the smallest sum of probabilities from the data array
 void addData(Node* addedNode); // adds the iteration to the data array
 void removeData(Node* searchedNode); // removes the iteration from the data array
