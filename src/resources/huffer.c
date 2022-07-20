@@ -6,6 +6,15 @@
 
 unsigned long long sizeOfFile = 0;
 
+void printHelp() {
+    printf("Huff Coding " PROGAM_VERSION ": Compress any type of binary file with the Huffman algorithm.\n\n");
+            printf("Usage: huff [options...] <file_path>\n\n");
+            printf("Options: \n"
+            "--help                                 Show this message\n"
+            "--enc <file_path>                      Encode file\n"
+            "--dec <file_path>                      Decode file\n");
+}
+
 void freeTree(Node* tree) {
     if(tree) {
         struct Node* leftChild = tree->leftChild; // gets the left child
@@ -224,46 +233,6 @@ void charToBinaryString(unsigned char ch, char buf[9]) {
 
 }
 
-// Several notions on how I have encrypted the Huffman tree:
-// For the encryption of the actual tree structure, I do a preorder traversal on the Huffman tree
-// in that traversal, I mark with 0 non leaf-nodes and with 1 leaf-nodes. This is what I call the prefix of the Huffman tree encryption.
-// For example, let the following Huffman tree:
-//              *
-//           *     C
-//        A    B
-// The prefix of the tree stated is as follows: 00111 (5 bits). Thus, the prefix of a Huffman tree with n nodes has n bits.
-// To reconstruct the tree from it's prefix, we simply go as follows:
-// the first 0 tells us that there is no leaf-node, so we mark that node with * and go to the left (because that's what we did to encrypt it)
-// the next 0 tells us that there is no leaf-node, we mark it with * and go to the left
-// the next 1 tells us that there is a leaf-node, we mark it with <blank> and go to the right of it's parent
-// the next 1 tells us that there is a leaf-node, we mark it with <blank> and because we've exhaused the parent nodes from left to right, we go to the parent's parent's right
-// the next 1 tells us that there is a leaf-node, so we mark it with <blank> and because there is no bit after it, the tree has been reconstructed
-// After reconstructing, the tree looks like this:
-//              *
-//           *     <blank>
-//   <blank>    <blank>
-// The problem is that we don't have access to the real keys the old tree had. This is where the notion of postfix comes from.
-// The postfix stores the actual representation of the keys stored in the leaf nodes, from left to right.
-// For instance, take the tree we used to have:
-//              *
-//           *     C
-//        A    B
-// We apply the same preorder algorithm on this tree and, once we get to a leaf node, we store the binary representation of it's key
-// First is A, then is B, and then is C, and their binary representations are 01000001, 01000010, 01000011.
-// So, the postfix will be: 010000010100001001000011. We can notice the postfix has a length of 8*numberOfKeysInHuffmanTree
-// To reconstruct the tree and get the same nodes as in the original, we do a preorder traversal on the tree obtained after prefix reconstruction
-// Once we get to a leaf node that is currently blank, we convert the first chunk of 8 bits in the postfix and assign that key in the tree with the character representation
-// Doing this for all leaf-nodes, the original Huffman tree is reconstructed
-// So, the encoding for the original Huffman tree above, combining the prefix and postfix, is as follows: 00111010000010100001001000011, which is 29 bits, or 4 bytes.
-
-// Because computers work better in multiples of eight, in my solution I've done the following: I have extended the prefix length to the smallest number of eight bigger or equal than the current length.
-// For example, take our prefix: 00111. Because it's on 5 bits, I am extending it to 8 bits by adding 3 zeros to the left: 00000111.
-// Doing this, operations will be simpler to make, as the whole encryption will have it's length a multiple of eight.
-// For this, 2 bytes have to be used: 1 byte to store the length of the fixed prefix (the one multiple of eight), and 1 byte to store the length of the actual prefix (the one without the extra zeroes at the beginning)
-// These 2 bytes will be part of the file header, along with the 4 bytes of the tree encoding above.
-// An extra 4 bytes of the header will be used to store the number of encoded Huffman keys after parsing the file. Thus, the total header size for this tree is 4 + 2 + 4 = 10 bytes. The same header will be used for all combinations
-// of the characters A,B,C, no matter the length of the string.
-
 void getHuffmanTreeEncryptionPrefix(Node* tree, char buf[PREFIX_LENGTH]) {
     if (tree == NULL)
         return;
@@ -339,6 +308,10 @@ void createCompressedFile(char* pathToFile) {
     for (int i = 0; i < fileExtensionLength; i++)
         fwrite(&fileExtensionData[i],sizeof(char),1,compressedFile);
     FILE* file1 = fopen(pathToFile, "rb");
+    if (!file1) {
+        fprintf(stderr, "Error on opening the specified file.\n");
+        exit(EXIT_FAILURE);
+    }
     FILE* file2 = fopen(pathToFile, "rb");
 
     printf("Progress: ");
