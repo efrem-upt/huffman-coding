@@ -297,6 +297,11 @@ void createCompressedFile(char* pathToFile) {
     strcpy(fileExtensionData,fileExtension + 1);
     char fileExtensionLength = strlen(fileExtension + 1);
     strcpy(fileExtension, "_encoded.EfremHuffmanCompression");
+    FILE* file1 = fopen(pathToFile, "rb");
+    if (!file1) {
+        fprintf(stderr, "Error on opening the specified file.\n");
+        exit(EXIT_FAILURE);
+    }
     FILE* compressedFile = fopen(filePath,"wb");
         if (!compressedFile) {
             fprintf(stderr,"Error on creating compressed file.\n");
@@ -307,11 +312,6 @@ void createCompressedFile(char* pathToFile) {
     fwrite(&fileExtensionLength,sizeof(char),1,compressedFile);
     for (int i = 0; i < fileExtensionLength; i++)
         fwrite(&fileExtensionData[i],sizeof(char),1,compressedFile);
-    FILE* file1 = fopen(pathToFile, "rb");
-    if (!file1) {
-        fprintf(stderr, "Error on opening the specified file.\n");
-        exit(EXIT_FAILURE);
-    }
     FILE* file2 = fopen(pathToFile, "rb");
 
     printf("Progress: ");
