@@ -1,7 +1,4 @@
 # huffman-coding
-C program that allows for encryption/decryption of ASCII text files into and from the Huffman coding algorithm. Small project made during my second year of Computer Engineering studies at Polytechnic University of Timișoara
-
-# micro-benchmark
 C program (Windows only) that allows for encoding/decoding of binary files into and from the Huffman coding algorithm. Small project made for the Design and analysis of algorithms (RO) lab during my second year of Computer Engineering studies at Polytechnic University of Timișoara.
 ## Running the program (Windows)
 
