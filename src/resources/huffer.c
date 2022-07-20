@@ -308,6 +308,10 @@ void createCompressedFile(char* pathToFile) {
     for (int i = 0; i < fileExtensionLength; i++)
         fwrite(&fileExtensionData[i],sizeof(char),1,compressedFile);
     FILE* file1 = fopen(pathToFile, "rb");
+    if (!file1) {
+        fprintf(stderr, "Error on opening the specified file.\n");
+        exit(EXIT_FAILURE);
+    }
     FILE* file2 = fopen(pathToFile, "rb");
 
     printf("Progress: ");
