@@ -103,5 +103,5 @@ An extra 2 bytes of the header will be used to store the number of encoded Huffm
 
 ## License
 
-[GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)
+[MIT](https://choosealicense.com/licenses/mit/)
 
